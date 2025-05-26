@@ -249,7 +249,7 @@ const styles = {
     backgroundColor: '#1e293b',
     flex: 1,
     display: 'flex',
-    height: 'calc(100vh - 270px)'
+    height: 'calc(100vh - 260px)'
   },
   analysisHalf: {
     width: '50%',
@@ -873,6 +873,9 @@ const MSPPortal: React.FC = () => {
   });
 
   const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [tempPriority, setTempPriority] = useState('');
+  const [tempStatus, setTempStatus] = useState('');
 
   const [customerPOCs] = useState<{[key: string]: {name: string, phone?: string, email?: string, title?: string}}>({
     'TF-2024-001523': { name: 'David Rodriguez', phone: '(555) 123-4500', email: 'david.rodriguez@meridianfg.com', title: 'IT Director' },
@@ -1219,7 +1222,19 @@ Outstanding Questions:
 • Has recent configuration changed?`);
   };
 
-  const generateAIDraft = () => {
+  const handleUpdatePriorityStatus = () => {
+    if (selectedTicket) {
+      setTempPriority(selectedTicket.priority.name);
+      setTempStatus(selectedTicket.status.name);
+      setShowUpdateModal(true);
+    }
+  };
+
+  const saveUpdates = () => {
+    // Here you would typically update the ticket data
+    console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
+    setShowUpdateModal(false);
+  };
     const aiDraftText = `Hi ${selectedTicket?.contact.name},
 
 Thank you for reporting the email delivery issue. I've begun investigating the intermittent rejection of inbound messages on your Exchange server.
@@ -1520,7 +1535,7 @@ TechFlow MSP - L2 Support Engineer`;
               <div style={styles.buttonGrid}>
                 <button style={styles.button}>Assign/Add Teammate</button>
                 <button style={styles.button}>Request Escalation</button>
-                <button style={styles.button}>Update Priority</button>
+                <button onClick={handleUpdatePriorityStatus} style={styles.button}>Update Priority / Status</button>
                 <button style={styles.button}>Add Watchers</button>
               </div>
             </div>
@@ -1609,6 +1624,70 @@ TechFlow MSP - L2 Support Engineer`;
           </div>
         </div>
       </div>
+
+      {showUpdateModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Update Priority & Status</div>
+              <button 
+                onClick={() => setShowUpdateModal(false)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                Priority:
+              </label>
+              <select
+                value={tempPriority}
+                onChange={(e) => setTempPriority(e.target.value)}
+                style={{ ...styles.searchInput, marginBottom: '0' }}
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                Status:
+              </label>
+              <select
+                value={tempStatus}
+                onChange={(e) => setTempStatus(e.target.value)}
+                style={{ ...styles.searchInput, marginBottom: '0' }}
+              >
+                <option value="New">New</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending">Pending</option>
+                <option value="Escalated">Escalated</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowUpdateModal(false)}
+                style={{ ...styles.button, backgroundColor: '#6b7280' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveUpdates}
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                Update Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showEnterpriseModal && (
         <div style={styles.modal}>
