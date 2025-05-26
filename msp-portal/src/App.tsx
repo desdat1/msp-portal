@@ -1,4 +1,16 @@
-import React, { useState, useEffect } from 'react';
+searchResults: {
+    backgroundColor: '#334155',
+    padding: '16px',
+    borderRadius: '6px',
+    minHeight: '200px',
+    fontSize: '13px',
+    lineHeight: 1.5
+  }  notesSection: {
+    backgroundColor: '#1e293b',
+    padding: '16px',
+    height: '28%',
+    overflowY: 'auto' as const
+  },import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -185,11 +197,21 @@ const styles = {
     display: 'flex',
     gap: '20px'
   },
-  analysisSection: {
+  bottomSplitSection: {
     backgroundColor: '#1e293b',
+    height: '63%',
+    display: 'flex',
+    borderBottom: '1px solid #334155'
+  },
+  analysisHalf: {
+    width: '50%',
     padding: '16px',
-    borderBottom: '1px solid #334155',
-    height: '35%',
+    borderRight: '1px solid #334155',
+    overflowY: 'auto' as const
+  },
+  notesHalf: {
+    width: '50%',
+    padding: '16px',
     overflowY: 'auto' as const
   },
   analysisHeader: {
@@ -443,14 +465,32 @@ const styles = {
     fontSize: '14px',
     cursor: 'pointer'
   },
-  searchResults: {
+  // Draggable modal styles
+  draggableModal: {
+    position: 'absolute' as const,
+    backgroundColor: '#1e293b',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    minWidth: '700px',
+    minHeight: '500px',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    cursor: 'move'
+  },
+  modalTitleBar: {
+    padding: '12px 16px',
     backgroundColor: '#334155',
+    borderBottom: '1px solid #475569',
+    borderRadius: '8px 8px 0 0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    cursor: 'move'
+  },
+  modalBody: {
     padding: '16px',
-    borderRadius: '6px',
-    minHeight: '200px',
-    fontSize: '13px',
-    lineHeight: 1.5
-  }
+    height: 'calc(100% - 50px)',
+    overflow: 'auto'
+  },
 };
 
 interface Ticket {
@@ -536,19 +576,60 @@ const MSPPortal: React.FC = () => {
     externalSources: false
   });
   const [searchResults, setSearchResults] = useState('');
-  const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string}>>([]);
+  const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string, position: {x: number, y: number}}>>([]);
+  const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
+    isDragging: false,
+    windowId: null,
+    offset: { x: 0, y: 0 }
+  });
 
   const openAnalysisWindow = (content: string) => {
     const newWindow = {
       id: Date.now().toString(),
       title: 'Analysis Results',
-      content: content
+      content: content,
+      position: { x: 100 + (analysisWindows.length * 30), y: 100 + (analysisWindows.length * 30) }
     };
     setAnalysisWindows(prev => [...prev, newWindow]);
   };
 
   const closeAnalysisWindow = (id: string) => {
     setAnalysisWindows(prev => prev.filter(window => window.id !== id));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, windowId: string) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setDragState({
+      isDragging: true,
+      windowId,
+      offset: {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      }
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (dragState.isDragging && dragState.windowId) {
+      const newX = e.clientX - dragState.offset.x;
+      const newY = e.clientY - dragState.offset.y;
+      
+      setAnalysisWindows(prev => 
+        prev.map(window => 
+          window.id === dragState.windowId 
+            ? { ...window, position: { x: newX, y: newY } }
+            : window
+        )
+      );
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDragState({
+      isDragging: false,
+      windowId: null,
+      offset: { x: 0, y: 0 }
+    });
   };
 
   // Timer effect
@@ -792,7 +873,11 @@ TechFlow MSP - L2 Support Engineer`;
   };
 
   return (
-    <div style={styles.container}>
+    <div 
+      style={styles.container}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       {/* Header - Compressed */}
       <div style={styles.header}>
         <div style={styles.headerTitle}>TechFlow MSP</div>
@@ -990,85 +1075,88 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* Analysis Results Section - Below Ticket Summary */}
-          <div style={styles.analysisSection}>
-            <div style={styles.analysisHeader}>
-              <div style={styles.sectionTitle}>Analysis Results</div>
-              {analysisText && (
-                <button 
-                  onClick={() => openAnalysisWindow(analysisText)}
-                  style={styles.cloneButton}
-                >
-                  📋 Clone Window
-                </button>
+          {/* Analysis Results & Ticket Updates - Split Screen Bottom Half */}
+          <div style={styles.bottomSplitSection}>
+            {/* Left Half - Analysis Results */}
+            <div style={styles.analysisHalf}>
+              <div style={styles.analysisHeader}>
+                <div style={styles.sectionTitle}>Analysis Results</div>
+                {analysisText && (
+                  <button 
+                    onClick={() => openAnalysisWindow(analysisText)}
+                    style={styles.cloneButton}
+                  >
+                    📋 Clone Window
+                  </button>
+                )}
+              </div>
+              {analysisText ? (
+                <div style={styles.analysisBox}>
+                  {analysisText}
+                </div>
+              ) : (
+                <div style={styles.analysisPlaceholder}>
+                  Click any AI Assistant button above to view analysis results here.
+                </div>
               )}
             </div>
-            {analysisText ? (
-              <div style={styles.analysisBox}>
-                {analysisText}
-              </div>
-            ) : (
-              <div style={styles.analysisPlaceholder}>
-                Click any AI Assistant button above to view analysis results here.
-              </div>
-            )}
-          </div>
 
-          {/* Notes & Communication - ALWAYS VISIBLE */}
-          <div style={styles.notesSection}>
-            <div style={styles.sectionTitle}>Notes & Communication</div>
-            
-            {/* Timer Display */}
-            <div style={{ marginBottom: '12px' }}>
-              <div style={styles.actionGroupTitle}>Time Tracking</div>
-              <div style={styles.timer}>{timerDisplay}</div>
-            </div>
-
-            <div>
-              <textarea
-                value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Add notes about your investigation or actions taken..."
-                style={styles.textarea}
-              />
-              <div style={styles.noteControls}>
-                <select
-                  value={noteType}
-                  onChange={(e) => setNoteType(e.target.value)}
-                  style={styles.select}
-                >
-                  <option>Internal Note</option>
-                  <option>Public Note</option>
-                  <option>Resolution Note</option>
-                </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
-                  <input type="checkbox" /> Request KB Article
-                </label>
-              </div>
+            {/* Right Half - Notes & Communication */}
+            <div style={styles.notesHalf}>
+              <div style={styles.sectionTitle}>Notes & Communication</div>
               
-              {/* Action Buttons Row */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-                <button onClick={generateAIDraft} style={styles.smallButton}>
-                  🤖 AI Draft
-                </button>
-                <button style={styles.smallButton}>
-                  📝 Add Note
-                </button>
-                <button style={styles.smallButton}>
-                  📎 Attach Files
-                </button>
-                <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
-                  ✅ Change Status / Close
-                </button>
-                <button
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                  style={styles.smallButton}
-                >
-                  {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
-                </button>
-                <button style={styles.smallButton}>
-                  ⏱️ Manual Entry
-                </button>
+              {/* Timer Display */}
+              <div style={{ marginBottom: '12px' }}>
+                <div style={styles.actionGroupTitle}>Time Tracking</div>
+                <div style={styles.timer}>{timerDisplay}</div>
+              </div>
+
+              <div>
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Add notes about your investigation or actions taken..."
+                  style={styles.textarea}
+                />
+                <div style={styles.noteControls}>
+                  <select
+                    value={noteType}
+                    onChange={(e) => setNoteType(e.target.value)}
+                    style={styles.select}
+                  >
+                    <option>Internal Note</option>
+                    <option>Public Note</option>
+                    <option>Resolution Note</option>
+                  </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
+                    <input type="checkbox" /> Request KB Article
+                  </label>
+                </div>
+                
+                {/* Action Buttons Row */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  <button onClick={generateAIDraft} style={styles.smallButton}>
+                    🤖 AI Draft
+                  </button>
+                  <button style={styles.smallButton}>
+                    📝 Add Note
+                  </button>
+                  <button style={styles.smallButton}>
+                    📎 Attach Files
+                  </button>
+                  <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
+                    ✅ Change Status / Close
+                  </button>
+                  <button
+                    onClick={() => setIsTimerRunning(!isTimerRunning)}
+                    style={styles.smallButton}
+                  >
+                    {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
+                  </button>
+                  <button style={styles.smallButton}>
+                    ⏱️ Manual Entry
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1152,30 +1240,35 @@ TechFlow MSP - L2 Support Engineer`;
         </div>
       )}
 
-      {/* Floating Analysis Windows */}
+      {/* Floating Analysis Windows - Draggable */}
       {analysisWindows.map((window, index) => (
-        <div key={window.id} style={{
-          ...styles.modal,
-          zIndex: 1100 + index
-        }}>
-          <div style={{
-            ...styles.modalContent,
-            width: '700px',
-            height: '500px'
-          }}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>{window.title}</div>
-              <button 
-                onClick={() => closeAnalysisWindow(window.id)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
+        <div 
+          key={window.id} 
+          style={{
+            ...styles.draggableModal,
+            left: window.position.x,
+            top: window.position.y,
+            zIndex: 1100 + index
+          }}
+        >
+          <div 
+            style={styles.modalTitleBar}
+            onMouseDown={(e) => handleMouseDown(e, window.id)}
+          >
+            <div style={styles.modalTitle}>{window.title}</div>
+            <button 
+              onClick={() => closeAnalysisWindow(window.id)}
+              style={styles.closeButton}
+            >
+              ×
+            </button>
+          </div>
+          <div style={styles.modalBody}>
             <div style={{
               ...styles.analysisBox,
-              height: '400px',
-              maxHeight: 'none'
+              height: '100%',
+              maxHeight: 'none',
+              margin: 0
             }}>
               {window.content}
             </div>
