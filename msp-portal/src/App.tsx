@@ -195,7 +195,7 @@ const styles = {
   },
   bottomSplitSection: {
     backgroundColor: '#1e293b',
-    height: 'calc(100vh - 25% - 12% - 80px)',
+    flex: 1,
     display: 'flex'
   },
   analysisHalf: {
