@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+const [lastNotes] = useState<Note[]>([import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -202,12 +202,18 @@ const styles = {
     width: '50%',
     padding: '16px',
     borderRight: '1px solid #334155',
-    overflowY: 'auto' as const
+    overflowY: 'auto' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    height: '100%'
   },
   notesHalf: {
     width: '50%',
     padding: '16px',
-    overflowY: 'auto' as const
+    overflowY: 'auto' as const,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    height: '100%'
   },
   lastNotesSection: {
     marginTop: '12px',
@@ -284,7 +290,15 @@ const styles = {
   contactSummary: {
     flex: 1,
     paddingLeft: '20px',
-    borderLeft: '1px solid #334155'
+    borderLeft: '1px solid #334155',
+    display: 'flex',
+    gap: '20px'
+  },
+  contactLeft: {
+    flex: 1
+  },
+  contactRight: {
+    flex: 1
   },
   ticketTitle: {
     display: 'flex',
@@ -310,7 +324,8 @@ const styles = {
     backgroundColor: '#334155',
     padding: '10px',
     borderRadius: '6px',
-    fontSize: '13px',
+    fontSize: '15px',
+    fontWeight: '600',
     lineHeight: 1.4,
     marginBottom: '10px'
   },
@@ -800,7 +815,14 @@ const MSPPortal: React.FC = () => {
     offset: { x: 0, y: 0 }
   });
 
-  const [lastNotes] = useState<Note[]>([
+  const [customerPOCs] = useState<{[key: string]: {name: string, phone?: string, email?: string, title?: string}}>({
+    'TF-2024-001523': { name: 'David Rodriguez', phone: '(555) 123-4500', email: 'david.rodriguez@meridianfg.com', title: 'IT Director' },
+    'TF-2024-001522': { name: 'Jennifer Torres', phone: '(555) 987-6500', email: 'j.torres@apexmfg.com', title: 'Operations Manager' },
+    'TF-2024-001521': { name: 'Robert Kim', phone: '(555) 456-7890', email: 'rkim@techstart.com', title: 'CTO' },
+    'TF-2024-001520': { name: 'Patricia Wilson', phone: '(555) 555-0100', email: 'pwilson@legalpartners.com', title: 'Managing Partner' },
+    'TF-2024-001519': { name: 'Dr. Mark Stevens', phone: '(555) 789-0123', email: 'mstevens@coastaldental.com', title: 'Practice Manager' },
+    'TF-2024-001518': { name: 'Jennifer Walsh', phone: '(555) 234-5670', email: 'jwalsh@premierlegal.com', title: 'Office Manager' }
+  });
     {
       id: 1,
       author: 'Sarah Chen',
@@ -1274,35 +1296,69 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
             
             <div style={styles.contactSummary}>
-              <div style={styles.sectionTitle}>Contact Info</div>
-              {selectedTicket && (
-                <div style={styles.contactInfo}>
-                  <div style={styles.contactField}>
-                    <span style={styles.contactLabel}>Requester:</span>
-                    <span style={styles.contactValue}>{selectedTicket.contact.name}</span>
-                  </div>
-                  <div style={styles.contactField}>
-                    <span style={styles.contactLabel}>Company:</span>
-                    <span style={styles.contactValue}>{selectedTicket.company.name}</span>
-                  </div>
-                  {selectedTicket.contact.phone && (
+              <div style={styles.contactLeft}>
+                <div style={styles.sectionTitle}>Contact Info</div>
+                {selectedTicket && (
+                  <div style={styles.contactInfo}>
                     <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Phone:</span>
-                      <a href={`tel:${selectedTicket.contact.phone}`} style={styles.link}>
-                        {selectedTicket.contact.phone}
-                      </a>
+                      <span style={styles.contactLabel}>Requester:</span>
+                      <span style={styles.contactValue}>{selectedTicket.contact.name}</span>
                     </div>
-                  )}
-                  {selectedTicket.contact.email && (
                     <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Email:</span>
-                      <a href={`mailto:${selectedTicket.contact.email}`} style={styles.link}>
-                        {selectedTicket.contact.email}
-                      </a>
+                      <span style={styles.contactLabel}>Company:</span>
+                      <span style={styles.contactValue}>{selectedTicket.company.name}</span>
                     </div>
-                  )}
-                </div>
-              )}
+                    {selectedTicket.contact.phone && (
+                      <div style={styles.contactField}>
+                        <span style={styles.contactLabel}>Phone:</span>
+                        <a href={`tel:${selectedTicket.contact.phone}`} style={styles.link}>
+                          {selectedTicket.contact.phone}
+                        </a>
+                      </div>
+                    )}
+                    {selectedTicket.contact.email && (
+                      <div style={styles.contactField}>
+                        <span style={styles.contactLabel}>Email:</span>
+                        <a href={`mailto:${selectedTicket.contact.email}`} style={styles.link}>
+                          {selectedTicket.contact.email}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div style={styles.contactRight}>
+                <div style={styles.sectionTitle}>Customer POC</div>
+                {selectedTicket && customerPOCs[selectedTicket.id] && (
+                  <div style={styles.contactInfo}>
+                    <div style={styles.contactField}>
+                      <span style={styles.contactLabel}>Name:</span>
+                      <span style={styles.contactValue}>{customerPOCs[selectedTicket.id].name}</span>
+                    </div>
+                    <div style={styles.contactField}>
+                      <span style={styles.contactLabel}>Title:</span>
+                      <span style={styles.contactValue}>{customerPOCs[selectedTicket.id].title}</span>
+                    </div>
+                    {customerPOCs[selectedTicket.id].phone && (
+                      <div style={styles.contactField}>
+                        <span style={styles.contactLabel}>Phone:</span>
+                        <a href={`tel:${customerPOCs[selectedTicket.id].phone}`} style={styles.link}>
+                          {customerPOCs[selectedTicket.id].phone}
+                        </a>
+                      </div>
+                    )}
+                    {customerPOCs[selectedTicket.id].email && (
+                      <div style={styles.contactField}>
+                        <span style={styles.contactLabel}>Email:</span>
+                        <a href={`mailto:${customerPOCs[selectedTicket.id].email}`} style={styles.link}>
+                          {customerPOCs[selectedTicket.id].email}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
