@@ -1,4 +1,4 @@
-const [lastNotes] = useState<Note[]>([import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -823,6 +823,8 @@ const MSPPortal: React.FC = () => {
     'TF-2024-001519': { name: 'Dr. Mark Stevens', phone: '(555) 789-0123', email: 'mstevens@coastaldental.com', title: 'Practice Manager' },
     'TF-2024-001518': { name: 'Jennifer Walsh', phone: '(555) 234-5670', email: 'jwalsh@premierlegal.com', title: 'Office Manager' }
   });
+
+  const [lastNotes] = useState<Note[]>([
     {
       id: 1,
       author: 'Sarah Chen',
@@ -1406,11 +1408,11 @@ TechFlow MSP - L2 Support Engineer`;
                 )}
               </div>
               {analysisText ? (
-                <div style={styles.analysisBox}>
+                <div style={{ ...styles.analysisBox, flex: 1 }}>
                   {analysisText}
                 </div>
               ) : (
-                <div style={styles.analysisPlaceholder}>
+                <div style={{ ...styles.analysisPlaceholder, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   Click any AI Assistant button above to view analysis results here.
                 </div>
               )}
@@ -1424,51 +1426,52 @@ TechFlow MSP - L2 Support Engineer`;
                 <div style={styles.timer}>{timerDisplay}</div>
               </div>
 
-              <div>
+              <div style={{ flex: 1 }}>
                 <textarea
                   value={noteText}
                   onChange={(e) => setNoteText(e.target.value)}
                   placeholder="Add notes about your investigation or actions taken..."
-                  style={styles.textarea}
+                  style={{ ...styles.textarea, height: '100%', minHeight: 'auto' }}
                 />
-                <div style={styles.noteControls}>
-                  <select
-                    value={noteType}
-                    onChange={(e) => setNoteType(e.target.value)}
-                    style={styles.select}
-                  >
-                    <option>Internal Note</option>
-                    <option>Public Note</option>
-                    <option>Resolution Note</option>
-                  </select>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
-                    <input type="checkbox" /> Request KB Article
-                  </label>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  <button onClick={generateAIDraft} style={styles.smallButton}>
-                    🤖 AI Draft
-                  </button>
-                  <button style={styles.smallButton}>
-                    📝 Add Note
-                  </button>
-                  <button style={styles.smallButton}>
-                    📎 Attach Files
-                  </button>
-                  <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
-                    ✅ Change Status / Close
-                  </button>
-                  <button
-                    onClick={() => setIsTimerRunning(!isTimerRunning)}
-                    style={styles.smallButton}
-                  >
-                    {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
-                  </button>
-                  <button style={styles.smallButton}>
-                    ⏱️ Manual Entry
-                  </button>
-                </div>
+              </div>
+              
+              <div style={styles.noteControls}>
+                <select
+                  value={noteType}
+                  onChange={(e) => setNoteType(e.target.value)}
+                  style={styles.select}
+                >
+                  <option>Internal Note</option>
+                  <option>Public Note</option>
+                  <option>Resolution Note</option>
+                </select>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
+                  <input type="checkbox" /> Request KB Article
+                </label>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                <button onClick={generateAIDraft} style={styles.smallButton}>
+                  🤖 AI Draft
+                </button>
+                <button style={styles.smallButton}>
+                  📝 Add Note
+                </button>
+                <button style={styles.smallButton}>
+                  📎 Attach Files
+                </button>
+                <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
+                  ✅ Change Status / Close
+                </button>
+                <button
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  style={styles.smallButton}
+                >
+                  {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
+                </button>
+                <button style={styles.smallButton}>
+                  ⏱️ Manual Entry
+                </button>
               </div>
             </div>
           </div>
