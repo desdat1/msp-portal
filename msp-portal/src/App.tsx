@@ -196,7 +196,8 @@ const styles = {
   bottomSplitSection: {
     backgroundColor: '#1e293b',
     flex: 1,
-    display: 'flex'
+    display: 'flex',
+    height: 'calc(100vh - 380px)'
   },
   analysisHalf: {
     width: '50%',
@@ -1426,6 +1427,30 @@ TechFlow MSP - L2 Support Engineer`;
                 <div style={styles.timer}>{timerDisplay}</div>
               </div>
 
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <button onClick={generateAIDraft} style={styles.smallButton}>
+                  🤖 AI Draft
+                </button>
+                <button style={styles.smallButton}>
+                  📝 Add Note
+                </button>
+                <button style={styles.smallButton}>
+                  📎 Attach Files
+                </button>
+                <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
+                  ✅ Change Status / Close
+                </button>
+                <button
+                  onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  style={styles.smallButton}
+                >
+                  {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
+                </button>
+                <button style={styles.smallButton}>
+                  ⏱️ Manual Entry
+                </button>
+              </div>
+
               <div style={{ flex: 1 }}>
                 <textarea
                   value={noteText}
@@ -1448,30 +1473,6 @@ TechFlow MSP - L2 Support Engineer`;
                 <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
                   <input type="checkbox" /> Request KB Article
                 </label>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-                <button onClick={generateAIDraft} style={styles.smallButton}>
-                  🤖 AI Draft
-                </button>
-                <button style={styles.smallButton}>
-                  📝 Add Note
-                </button>
-                <button style={styles.smallButton}>
-                  📎 Attach Files
-                </button>
-                <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
-                  ✅ Change Status / Close
-                </button>
-                <button
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                  style={styles.smallButton}
-                >
-                  {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
-                </button>
-                <button style={styles.smallButton}>
-                  ⏱️ Manual Entry
-                </button>
               </div>
             </div>
           </div>
