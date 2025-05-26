@@ -10,7 +10,29 @@ const styles = {
   header: {
     backgroundColor: '#1e293b',
     padding: '12px 20px',
-    borderBottom: '1px solid #334155'
+    borderBottom: '1px solid #334155',
+    position: 'relative' as const
+  },
+  headerToggle: {
+    position: 'absolute' as const,
+    left: '8px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    backgroundColor: '#475569',
+    border: '1px solid #64748b',
+    borderRadius: '4px',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    color: '#e2e8f0',
+    transition: 'all 0.2s'
+  },
+  headerContent: {
+    marginLeft: '0px',
+    transition: 'margin-left 0.3s ease'
+  },
+  headerContentShifted: {
+    marginLeft: '40px'
   },
   headerTitle: {
     fontSize: '20px',
@@ -65,11 +87,7 @@ const styles = {
     transition: 'all 0.2s'
   },
   toggleButtonHidden: {
-    right: '-15px',
-    borderRadius: '6px',
-    position: 'fixed' as const,
-    left: '0px',
-    backgroundColor: '#475569'
+    display: 'none'
   },
   rightPanel: {
     flex: 1,
@@ -231,7 +249,7 @@ const styles = {
     backgroundColor: '#1e293b',
     flex: 1,
     display: 'flex',
-    height: 'calc(100vh - 280px)'
+    height: 'calc(100vh - 270px)'
   },
   analysisHalf: {
     width: '50%',
@@ -1043,24 +1061,52 @@ const MSPPortal: React.FC = () => {
     }
   };
 
-  const filteredTickets = mockTickets.filter(ticket => {
-    const matchesSearch = ticket.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!sortFilter) return matchesSearch;
-    
-    switch (sortBy) {
-      case 'client':
-        return matchesSearch && ticket.company.name.toLowerCase().includes(sortFilter);
-      case 'priority':
-        return matchesSearch && ticket.priority.name.toLowerCase() === sortFilter;
-      case 'status':
-        return matchesSearch && ticket.status.name.toLowerCase().replace(' ', '-') === sortFilter;
-      default:
-        return matchesSearch;
+  const getPriorityWeight = (priority: string): number => {
+    switch (priority.toLowerCase()) {
+      case 'high': return 3;
+      case 'medium': return 2;
+      case 'low': return 1;
+      default: return 0;
     }
-  });
+  };
+
+  const getStatusWeight = (status: string): number => {
+    // Escalated tickets should always be at the top
+    if (status.toLowerCase() === 'escalated') return 100;
+    return 0;
+  };
+
+  const filteredTickets = mockTickets
+    .filter(ticket => {
+      const matchesSearch = ticket.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           ticket.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!sortFilter) return matchesSearch;
+      
+      switch (sortBy) {
+        case 'client':
+          return matchesSearch && ticket.company.name.toLowerCase().includes(sortFilter);
+        case 'priority':
+          return matchesSearch && ticket.priority.name.toLowerCase() === sortFilter;
+        case 'status':
+          return matchesSearch && ticket.status.name.toLowerCase().replace(' ', '-') === sortFilter;
+        default:
+          return matchesSearch;
+      }
+    })
+    .sort((a, b) => {
+      // First sort by status (escalated tickets first)
+      const statusDiff = getStatusWeight(b.status.name) - getStatusWeight(a.status.name);
+      if (statusDiff !== 0) return statusDiff;
+      
+      // Then sort by priority (high to low)
+      const priorityDiff = getPriorityWeight(b.priority.name) - getPriorityWeight(a.priority.name);
+      if (priorityDiff !== 0) return priorityDiff;
+      
+      // Finally sort by date (newest first)
+      return new Date(b.dateEntered).getTime() - new Date(a.dateEntered).getTime();
+    });
 
   const showClientEnvironment = () => {
     setAnalysisText(`CLIENT ENVIRONMENT - ${selectedTicket?.company.name}
@@ -1206,12 +1252,26 @@ TechFlow MSP - L2 Support Engineer`;
       onMouseUp={handleMouseUp}
     >
       <div style={styles.header}>
-        <div style={styles.headerTitle}>TechFlow MSP</div>
-        <div style={styles.headerSubtitle}>Sarah Chen - L2 Support Engineer</div>
-        <div style={styles.stats}>
-          <div style={styles.stat}>Assigned: 8</div>
-          <div style={styles.stat}>Open: 12</div>
-          <div style={styles.stat}>SLA: 2</div>
+        {!isLeftPanelVisible && (
+          <button
+            onClick={() => setIsLeftPanelVisible(true)}
+            style={styles.headerToggle}
+            title="Show ticket list"
+          >
+            ▶
+          </button>
+        )}
+        <div style={{
+          ...styles.headerContent,
+          ...(!isLeftPanelVisible ? styles.headerContentShifted : {})
+        }}>
+          <div style={styles.headerTitle}>TechFlow MSP</div>
+          <div style={styles.headerSubtitle}>Sarah Chen - L2 Support Engineer</div>
+          <div style={styles.stats}>
+            <div style={styles.stat}>Assigned: 8</div>
+            <div style={styles.stat}>Open: 12</div>
+            <div style={styles.stat}>SLA: 2</div>
+          </div>
         </div>
       </div>
 
