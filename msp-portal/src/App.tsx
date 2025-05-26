@@ -1,13 +1,4 @@
-const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
-    isDragging: false,
-    windowId: null,
-    offset: { x: 0, y: 0 }
-  });  analysisHalf: {
-    width: '50%',
-    padding: '16px',
-    borderRight: '1px solid #334155',
-    overflowY: 'auto' as const
-  },import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -110,9 +101,7 @@ const styles = {
   },
   ticketsList: {
     flex: 1,
-    overflowY: 'scroll' as const,
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#475569 #334155'
+    overflowY: 'scroll' as const
   },
   ticket: {
     padding: '12px',
@@ -202,6 +191,17 @@ const styles = {
     display: 'flex',
     borderBottom: '1px solid #334155'
   },
+  analysisHalf: {
+    width: '50%',
+    padding: '16px',
+    borderRight: '1px solid #334155',
+    overflowY: 'auto' as const
+  },
+  notesHalf: {
+    width: '50%',
+    padding: '16px',
+    overflowY: 'auto' as const
+  },
   lastNotesSection: {
     marginTop: '12px',
     marginBottom: '8px'
@@ -217,9 +217,7 @@ const styles = {
     border: '1px solid #475569',
     borderRadius: '6px',
     maxHeight: '120px',
-    overflowY: 'scroll' as const,
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#475569 #334155'
+    overflowY: 'scroll' as const
   },
   noteItem: {
     padding: '8px 10px',
@@ -246,11 +244,6 @@ const styles = {
   },
   noteText: {
     color: '#cbd5e1'
-  },
-  notesHalf: {
-    width: '50%',
-    padding: '16px',
-    overflowY: 'auto' as const
   },
   analysisHeader: {
     display: 'flex',
@@ -539,6 +532,13 @@ interface Ticket {
   assignedEngineer?: string;
 }
 
+interface Note {
+  id: number;
+  author: string;
+  date: string;
+  text: string;
+}
+
 const mockTickets: Ticket[] = [
   {
     id: 'TF-2024-001523',
@@ -611,7 +611,13 @@ const MSPPortal: React.FC = () => {
   });
   const [searchResults, setSearchResults] = useState('');
   const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string, position: {x: number, y: number}}>>([]);
-  const [lastNotes] = useState([
+  const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
+    isDragging: false,
+    windowId: null,
+    offset: { x: 0, y: 0 }
+  });
+
+  const [lastNotes] = useState<Note[]>([
     {
       id: 1,
       author: 'Sarah Chen',
@@ -1057,7 +1063,6 @@ TechFlow MSP - L2 Support Engineer`;
                     <strong>Issue:</strong> {selectedTicket.initialDescription}
                   </div>
 
-                  {/* Last Notes Section */}
                   <div style={styles.lastNotesSection}>
                     <div style={styles.lastNotesTitle}>Last Notes</div>
                     <div style={styles.lastNotesContainer}>
