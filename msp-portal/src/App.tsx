@@ -212,6 +212,7 @@ const styles = {
     width: '50%',
     padding: '16px',
     overflowY: 'auto' as const,
+    overflowX: 'hidden' as const,
     display: 'flex',
     flexDirection: 'column' as const,
     height: '100%'
@@ -383,7 +384,7 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s',
     fontSize: '10px',
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#e2e8f0'
   },
   timer: {
@@ -408,7 +409,10 @@ const styles = {
     resize: 'vertical' as const,
     marginBottom: '10px',
     backgroundColor: '#334155',
-    color: '#e2e8f0'
+    color: '#e2e8f0',
+    boxSizing: 'border-box' as const,
+    overflowX: 'hidden' as const,
+    wordWrap: 'break-word' as const
   },
   noteControls: {
     display: 'flex',
