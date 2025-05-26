@@ -1,16 +1,4 @@
-searchResults: {
-    backgroundColor: '#334155',
-    padding: '16px',
-    borderRadius: '6px',
-    minHeight: '200px',
-    fontSize: '13px',
-    lineHeight: 1.5
-  }  notesSection: {
-    backgroundColor: '#1e293b',
-    padding: '16px',
-    height: '28%',
-    overflowY: 'auto' as const
-  },import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -332,16 +320,6 @@ const styles = {
     fontWeight: '500',
     color: '#e2e8f0'
   },
-  buttonHover: {
-    backgroundColor: '#475569',
-    borderColor: '#3b82f6'
-  },
-  notesSection: {
-    backgroundColor: '#1e293b',
-    padding: '16px',
-    height: '28%',
-    overflowY: 'auto' as const
-  },
   timer: {
     backgroundColor: '#1e40af',
     border: '1px solid #3b82f6',
@@ -405,7 +383,6 @@ const styles = {
     color: '#cbd5e1',
     marginBottom: '6px'
   },
-  // Modal styles for Enterprise Search
   modal: {
     position: 'fixed' as const,
     top: 0,
@@ -465,7 +442,14 @@ const styles = {
     fontSize: '14px',
     cursor: 'pointer'
   },
-  // Draggable modal styles
+  searchResults: {
+    backgroundColor: '#334155',
+    padding: '16px',
+    borderRadius: '6px',
+    minHeight: '200px',
+    fontSize: '13px',
+    lineHeight: 1.5
+  },
   draggableModal: {
     position: 'absolute' as const,
     backgroundColor: '#1e293b',
@@ -490,7 +474,7 @@ const styles = {
     padding: '16px',
     height: 'calc(100% - 50px)',
     overflow: 'auto'
-  },
+  }
 };
 
 interface Ticket {
@@ -632,7 +616,6 @@ const MSPPortal: React.FC = () => {
     });
   };
 
-  // Timer effect
   useEffect(() => {
     if (!isTimerRunning) return;
     
@@ -878,7 +861,6 @@ TechFlow MSP - L2 Support Engineer`;
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      {/* Header - Compressed */}
       <div style={styles.header}>
         <div style={styles.headerTitle}>TechFlow MSP</div>
         <div style={styles.headerSubtitle}>Sarah Chen - L2 Support Engineer</div>
@@ -890,9 +872,7 @@ TechFlow MSP - L2 Support Engineer`;
       </div>
 
       <div style={styles.main}>
-        {/* Left Panel - Tickets List */}
         <div style={styles.leftPanel}>
-          {/* Filters Section - Compressed */}
           <div style={styles.filtersSection}>
             <input
               type="text"
@@ -949,7 +929,6 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* Tickets List */}
           <div style={styles.ticketsList}>
             {filteredTickets.map((ticket) => (
               <div
@@ -979,9 +958,7 @@ TechFlow MSP - L2 Support Engineer`;
           </div>
         </div>
 
-        {/* Right Panel */}
         <div style={styles.rightPanel}>
-          {/* Ticket Overview & Contact - Top Section */}
           <div style={styles.topSection}>
             <div style={styles.ticketOverview}>
               <div style={styles.ticketTitle}>
@@ -1010,7 +987,6 @@ TechFlow MSP - L2 Support Engineer`;
               )}
             </div>
             
-            {/* Contact Summary - Compressed */}
             <div style={styles.contactSummary}>
               <div style={styles.sectionTitle}>Contact Info</div>
               {selectedTicket && (
@@ -1044,7 +1020,6 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* AI Assistant & Management Buttons */}
           <div style={styles.actionButtonsSection}>
             <div style={styles.aiColumn}>
               <div style={styles.sectionTitle}>AI Engineer Assistant</div>
@@ -1075,9 +1050,7 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* Analysis Results & Ticket Updates - Split Screen Bottom Half */}
           <div style={styles.bottomSplitSection}>
-            {/* Left Half - Analysis Results */}
             <div style={styles.analysisHalf}>
               <div style={styles.analysisHeader}>
                 <div style={styles.sectionTitle}>Analysis Results</div>
@@ -1101,11 +1074,9 @@ TechFlow MSP - L2 Support Engineer`;
               )}
             </div>
 
-            {/* Right Half - Notes & Communication */}
             <div style={styles.notesHalf}>
               <div style={styles.sectionTitle}>Notes & Communication</div>
               
-              {/* Timer Display */}
               <div style={{ marginBottom: '12px' }}>
                 <div style={styles.actionGroupTitle}>Time Tracking</div>
                 <div style={styles.timer}>{timerDisplay}</div>
@@ -1133,7 +1104,6 @@ TechFlow MSP - L2 Support Engineer`;
                   </label>
                 </div>
                 
-                {/* Action Buttons Row */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
                   <button onClick={generateAIDraft} style={styles.smallButton}>
                     🤖 AI Draft
@@ -1163,7 +1133,6 @@ TechFlow MSP - L2 Support Engineer`;
         </div>
       </div>
 
-      {/* Enterprise Search Modal */}
       {showEnterpriseModal && (
         <div style={styles.modal}>
           <div style={styles.modalContent}>
@@ -1240,7 +1209,6 @@ TechFlow MSP - L2 Support Engineer`;
         </div>
       )}
 
-      {/* Floating Analysis Windows - Draggable */}
       {analysisWindows.map((window, index) => (
         <div 
           key={window.id} 
