@@ -1,18 +1,4 @@
-const [searchResults, setSearchResults] = useState('');
-
-  const openAnalysisWindow = (content: string) => {
-    const newWindow = {
-      id: Date.now().toString(),
-      title: 'Analysis Results',
-      content: content
-    };
-    setAnalysisWindows(prev => [...prev, newWindow]);
-  };
-
-  const closeAnalysisWindow = (id: string) => {
-    setAnalysisWindows(prev => prev.filter(window => window.id !== id));
-  };          {/* AI Assistant & Management Buttons */}
-          <div style={styles.actionButtonsSection}>import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -549,7 +535,21 @@ const MSPPortal: React.FC = () => {
     sharepoint: false,
     externalSources: false
   });
+  const [searchResults, setSearchResults] = useState('');
   const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string}>>([]);
+
+  const openAnalysisWindow = (content: string) => {
+    const newWindow = {
+      id: Date.now().toString(),
+      title: 'Analysis Results',
+      content: content
+    };
+    setAnalysisWindows(prev => [...prev, newWindow]);
+  };
+
+  const closeAnalysisWindow = (id: string) => {
+    setAnalysisWindows(prev => prev.filter(window => window.id !== id));
+  };
 
   // Timer effect
   useEffect(() => {
@@ -713,6 +713,8 @@ Key Contacts:
     }
     
     setSearchResults(results);
+    setAnalysisText(results);
+    setShowEnterpriseModal(false);
   };
 
   const showAIActions = () => {
@@ -957,29 +959,8 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* Analysis Results Section - Below Ticket Summary */}
-          <div style={styles.analysisSection}>
-            <div style={styles.analysisHeader}>
-              <div style={styles.sectionTitle}>Analysis Results</div>
-              {analysisText && (
-                <button 
-                  onClick={() => openAnalysisWindow(analysisText)}
-                  style={styles.cloneButton}
-                >
-                  📋 Clone Window
-                </button>
-              )}
-            </div>
-            {analysisText ? (
-              <div style={styles.analysisBox}>
-                {analysisText}
-              </div>
-            ) : (
-              <div style={styles.analysisPlaceholder}>
-                Click any AI Assistant button above to view analysis results here.
-              </div>
-            )}
-          </div>
+          {/* AI Assistant & Management Buttons */}
+          <div style={styles.actionButtonsSection}>
             <div style={styles.aiColumn}>
               <div style={styles.sectionTitle}>AI Engineer Assistant</div>
               <div style={styles.buttonGrid}>
@@ -1007,6 +988,30 @@ TechFlow MSP - L2 Support Engineer`;
                 <button style={styles.button}>Add Watchers</button>
               </div>
             </div>
+          </div>
+
+          {/* Analysis Results Section - Below Ticket Summary */}
+          <div style={styles.analysisSection}>
+            <div style={styles.analysisHeader}>
+              <div style={styles.sectionTitle}>Analysis Results</div>
+              {analysisText && (
+                <button 
+                  onClick={() => openAnalysisWindow(analysisText)}
+                  style={styles.cloneButton}
+                >
+                  📋 Clone Window
+                </button>
+              )}
+            </div>
+            {analysisText ? (
+              <div style={styles.analysisBox}>
+                {analysisText}
+              </div>
+            ) : (
+              <div style={styles.analysisPlaceholder}>
+                Click any AI Assistant button above to view analysis results here.
+              </div>
+            )}
           </div>
 
           {/* Notes & Communication - ALWAYS VISIBLE */}
