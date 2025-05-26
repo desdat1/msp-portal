@@ -9,35 +9,35 @@ const styles = {
   },
   header: {
     backgroundColor: '#1e293b',
-    padding: '20px',
+    padding: '12px 20px',
     borderBottom: '1px solid #334155'
   },
   headerTitle: {
-    fontSize: '24px',
+    fontSize: '20px',
     fontWeight: '700',
-    marginBottom: '8px'
+    marginBottom: '4px'
   },
   headerSubtitle: {
-    fontSize: '14px',
+    fontSize: '12px',
     opacity: 0.9,
-    marginBottom: '12px'
+    marginBottom: '8px'
   },
   stats: {
     display: 'flex',
     gap: '16px',
-    fontSize: '12px'
+    fontSize: '11px'
   },
   stat: {
     backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: '4px 8px',
-    borderRadius: '4px'
+    padding: '3px 6px',
+    borderRadius: '3px'
   },
   main: {
     display: 'flex',
-    height: 'calc(100vh - 120px)'
+    height: 'calc(100vh - 80px)'
   },
   leftPanel: {
-    width: '33%',
+    width: '28%',
     backgroundColor: '#1e293b',
     borderRight: '1px solid #334155',
     display: 'flex' as const,
@@ -50,45 +50,45 @@ const styles = {
     flexDirection: 'column' as const
   },
   filtersSection: {
-    padding: '16px',
+    padding: '12px',
     borderBottom: '1px solid #334155'
   },
   searchBar: {
     width: '100%',
-    padding: '8px 12px',
+    padding: '6px 10px',
     border: '1px solid #475569',
-    borderRadius: '6px',
-    fontSize: '14px',
-    marginBottom: '12px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    marginBottom: '8px',
     backgroundColor: '#334155',
     color: '#e2e8f0'
   },
   controlsRow: {
     display: 'flex',
-    gap: '12px',
+    gap: '8px',
     alignItems: 'center',
-    marginBottom: '12px'
+    marginBottom: '8px'
   },
   select: {
-    padding: '6px 12px',
+    padding: '4px 8px',
     border: '1px solid #475569',
-    borderRadius: '4px',
-    fontSize: '12px',
+    borderRadius: '3px',
+    fontSize: '10px',
     backgroundColor: '#334155',
     color: '#e2e8f0',
-    minWidth: '100px'
+    minWidth: '80px'
   },
   tabsRow: {
     display: 'flex',
-    gap: '8px'
+    gap: '6px'
   },
   tab: {
     flex: 1,
-    padding: '8px 12px',
+    padding: '6px 10px',
     border: '1px solid #475569',
-    borderRadius: '4px',
+    borderRadius: '3px',
     cursor: 'pointer',
-    fontSize: '12px',
+    fontSize: '10px',
     textAlign: 'center' as const,
     transition: 'all 0.2s',
     backgroundColor: 'transparent',
@@ -104,7 +104,7 @@ const styles = {
     overflowY: 'auto' as const
   },
   ticket: {
-    padding: '16px',
+    padding: '12px',
     borderBottom: '1px solid #334155',
     cursor: 'pointer',
     transition: 'all 0.2s'
@@ -117,16 +117,16 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '6px'
+    marginBottom: '4px'
   },
   ticketNumber: {
     fontWeight: '600',
-    fontSize: '14px'
+    fontSize: '12px'
   },
   priority: {
-    padding: '2px 6px',
-    borderRadius: '12px',
-    fontSize: '10px',
+    padding: '1px 4px',
+    borderRadius: '8px',
+    fontSize: '8px',
     fontWeight: '600',
     textTransform: 'uppercase' as const
   },
@@ -143,26 +143,26 @@ const styles = {
     color: '#16a34a'
   },
   clientName: {
-    fontSize: '12px',
+    fontSize: '10px',
     color: '#94a3b8',
-    marginBottom: '4px'
+    marginBottom: '3px'
   },
   ticketSubject: {
-    fontSize: '13px',
+    fontSize: '11px',
     color: '#cbd5e1',
-    marginBottom: '8px',
-    lineHeight: 1.3
+    marginBottom: '6px',
+    lineHeight: 1.2
   },
   ticketMeta: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: '11px',
+    fontSize: '9px',
     color: '#64748b'
   },
   status: {
-    padding: '2px 8px',
-    borderRadius: '10px',
+    padding: '1px 6px',
+    borderRadius: '8px',
     fontWeight: '500'
   },
   statusNew: {
@@ -177,27 +177,45 @@ const styles = {
     backgroundColor: '#f3e8ff',
     color: '#7c3aed'
   },
-  ticketOverview: {
+  topSection: {
     backgroundColor: '#1e293b',
-    padding: '20px',
+    padding: '16px',
     borderBottom: '1px solid #334155',
-    height: '32%',
+    height: '25%',
+    display: 'flex',
+    gap: '20px'
+  },
+  // Analysis Results - Top full width
+  analysisSection: {
+    backgroundColor: '#1e293b',
+    padding: '16px',
+    borderBottom: '1px solid #334155',
+    height: '30%',
     overflowY: 'auto' as const
+  },
+  ticketOverview: {
+    flex: 2,
+    paddingRight: '20px'
+  },
+  contactSummary: {
+    flex: 1,
+    paddingLeft: '20px',
+    borderLeft: '1px solid #334155'
   },
   ticketTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    gap: '12px',
     marginBottom: '12px'
   },
   ticketId: {
-    fontSize: '24px',
+    fontSize: '20px',
     fontWeight: '700'
   },
   badge: {
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '12px',
+    padding: '3px 6px',
+    borderRadius: '3px',
+    fontSize: '10px',
     fontWeight: '600'
   },
   badgeRed: {
@@ -206,25 +224,23 @@ const styles = {
   },
   ticketDescription: {
     backgroundColor: '#334155',
-    padding: '12px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    lineHeight: 1.5,
-    marginBottom: '12px'
+    padding: '10px',
+    borderRadius: '6px',
+    fontSize: '13px',
+    lineHeight: 1.4,
+    marginBottom: '10px'
   },
   contactInfo: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '12px',
-    fontSize: '14px'
+    fontSize: '12px'
   },
   contactField: {
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '4px'
+    gap: '2px',
+    marginBottom: '8px'
   },
   contactLabel: {
-    fontSize: '12px',
+    fontSize: '10px',
     color: '#94a3b8',
     fontWeight: '500'
   },
@@ -235,11 +251,11 @@ const styles = {
     color: '#3b82f6',
     textDecoration: 'none'
   },
-  infoGathering: {
+  actionButtonsSection: {
     backgroundColor: '#1e293b',
-    padding: '20px',
+    padding: '12px 16px',
     borderBottom: '1px solid #334155',
-    height: '23%',
+    height: '12%',
     display: 'flex',
     gap: '20px'
   },
@@ -250,23 +266,23 @@ const styles = {
     flex: 1
   },
   sectionTitle: {
-    fontSize: '16px',
+    fontSize: '14px',
     fontWeight: '600',
-    marginBottom: '16px'
+    marginBottom: '10px'
   },
   buttonGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '8px'
+    gap: '6px'
   },
   button: {
-    padding: '8px 12px',
+    padding: '6px 10px',
     backgroundColor: '#334155',
     border: '1px solid #475569',
-    borderRadius: '6px',
+    borderRadius: '4px',
     cursor: 'pointer',
     transition: 'all 0.2s',
-    fontSize: '12px',
+    fontSize: '10px',
     fontWeight: '500',
     color: '#e2e8f0'
   },
@@ -274,85 +290,142 @@ const styles = {
     backgroundColor: '#475569',
     borderColor: '#3b82f6'
   },
-  ticketActions: {
+  notesSection: {
     backgroundColor: '#1e293b',
-    padding: '20px',
-    height: '45%',
+    padding: '16px',
+    height: '33%',
     overflowY: 'auto' as const
-  },
-  actionsGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '20px',
-    marginBottom: '20px'
-  },
-  actionGroup: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '8px'
-  },
-  actionGroupTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#cbd5e1',
-    marginBottom: '8px'
-  },
-  smallButton: {
-    padding: '6px 12px',
-    border: '1px solid #475569',
-    borderRadius: '4px',
-    backgroundColor: '#334155',
-    cursor: 'pointer',
-    fontSize: '11px',
-    transition: 'all 0.2s',
-    color: '#e2e8f0'
   },
   timer: {
     backgroundColor: '#1e40af',
     border: '1px solid #3b82f6',
-    borderRadius: '6px',
-    padding: '8px 12px',
+    borderRadius: '4px',
+    padding: '6px 10px',
     fontFamily: 'monospace',
-    fontSize: '14px',
+    fontSize: '12px',
     color: '#dbeafe',
     textAlign: 'center' as const,
-    marginBottom: '8px'
+    marginBottom: '10px'
   },
   textarea: {
     width: '100%',
-    minHeight: '100px',
-    padding: '12px',
+    minHeight: '80px',
+    padding: '10px',
     border: '1px solid #475569',
-    borderRadius: '6px',
+    borderRadius: '4px',
     fontFamily: 'inherit',
-    fontSize: '14px',
+    fontSize: '12px',
     resize: 'vertical' as const,
-    marginBottom: '12px',
+    marginBottom: '10px',
     backgroundColor: '#334155',
     color: '#e2e8f0'
   },
   noteControls: {
     display: 'flex',
-    gap: '12px',
+    gap: '10px',
     alignItems: 'center',
     flexWrap: 'wrap' as const,
-    fontSize: '14px'
+    fontSize: '12px',
+    marginBottom: '10px'
   },
   analysisBox: {
     backgroundColor: '#334155',
-    padding: '16px',
-    borderRadius: '8px',
-    fontSize: '14px',
+    padding: '12px',
+    borderRadius: '6px',
+    fontSize: '12px',
     whiteSpace: 'pre-wrap' as const,
-    maxHeight: '200px',
+    maxHeight: '250px',
     overflowY: 'auto' as const,
-    marginBottom: '16px',
-    lineHeight: 1.6
+    lineHeight: 1.5
   },
   primaryButton: {
     backgroundColor: '#3b82f6',
     color: 'white',
     borderColor: '#3b82f6'
+  },
+  smallButton: {
+    padding: '4px 8px',
+    border: '1px solid #475569',
+    borderRadius: '3px',
+    backgroundColor: '#334155',
+    cursor: 'pointer',
+    fontSize: '10px',
+    transition: 'all 0.2s',
+    color: '#e2e8f0'
+  },
+  actionGroupTitle: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#cbd5e1',
+    marginBottom: '6px'
+  },
+  // Modal styles for Enterprise Search
+  modal: {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000
+  },
+  modalContent: {
+    backgroundColor: '#1e293b',
+    padding: '24px',
+    borderRadius: '8px',
+    width: '600px',
+    maxHeight: '80vh',
+    overflowY: 'auto' as const,
+    border: '1px solid #334155'
+  },
+  modalHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px'
+  },
+  modalTitle: {
+    fontSize: '18px',
+    fontWeight: '600'
+  },
+  closeButton: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    fontSize: '20px'
+  },
+  searchInput: {
+    width: '100%',
+    padding: '10px',
+    border: '1px solid #475569',
+    borderRadius: '4px',
+    backgroundColor: '#334155',
+    color: '#e2e8f0',
+    fontSize: '14px',
+    marginBottom: '16px'
+  },
+  checkboxGroup: {
+    marginBottom: '20px'
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '8px',
+    fontSize: '14px',
+    cursor: 'pointer'
+  },
+  searchResults: {
+    backgroundColor: '#334155',
+    padding: '16px',
+    borderRadius: '6px',
+    minHeight: '200px',
+    fontSize: '13px',
+    lineHeight: 1.5
   }
 };
 
@@ -430,6 +503,15 @@ const MSPPortal: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [noteType, setNoteType] = useState('Internal Note');
   const [analysisText, setAnalysisText] = useState('');
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSources, setSearchSources] = useState({
+    historicalTickets: true,
+    clientDocumentation: true,
+    sharepoint: false,
+    externalSources: false
+  });
+  const [searchResults, setSearchResults] = useState('');
 
   // Timer effect
   useEffect(() => {
@@ -561,24 +643,38 @@ Key Contacts:
 • CEO: David Chen`);
   };
 
-  const showEnterpriseSearch = () => {
-    setAnalysisText(`ENTERPRISE SEARCH RESULTS
-
-Search Query: "email server rejecting inbound messages"
-
-Historical Tickets:
-✓ #TF-2024-001324 - Similar Issue (Resolved)
-  Client: Meridian Financial Group
-  Resolution: Exchange server rejecting emails due to recipient policy misconfiguration. Updated recipient filtering rules and restarted SMTP service.
-
-IT Glue Documentation:
-✓ Exchange Configuration Guide
-  Standard operating procedure for troubleshooting Exchange email delivery issues including common causes and step-by-step diagnostics.
-
-Knowledge Base Articles:
-✓ Email Delivery Troubleshooting
-✓ Exchange Server Best Practices
-✓ SMTP Connector Configuration`);
+  const handleEnterpriseSearch = () => {
+    if (!searchQuery.trim()) return;
+    
+    let results = `ENTERPRISE SEARCH RESULTS\nQuery: "${searchQuery}"\n\n`;
+    
+    if (searchSources.historicalTickets) {
+      results += `HISTORICAL TICKETS:\n`;
+      results += `✓ #TF-2024-001324 - Similar Issue (Resolved)\n`;
+      results += `  Client: Meridian Financial Group\n`;
+      results += `  Resolution: Exchange server rejecting emails due to recipient policy misconfiguration.\n\n`;
+    }
+    
+    if (searchSources.clientDocumentation) {
+      results += `CLIENT DOCUMENTATION:\n`;
+      results += `✓ Exchange Configuration Guide\n`;
+      results += `✓ Network Topology Diagram\n`;
+      results += `✓ Backup Procedures Manual\n\n`;
+    }
+    
+    if (searchSources.sharepoint) {
+      results += `SHAREPOINT DOCUMENTS:\n`;
+      results += `✓ IT Policies and Procedures\n`;
+      results += `✓ Change Management Process\n\n`;
+    }
+    
+    if (searchSources.externalSources) {
+      results += `EXTERNAL SOURCES:\n`;
+      results += `✓ Microsoft TechNet Articles\n`;
+      results += `✓ Vendor Documentation\n\n`;
+    }
+    
+    setSearchResults(results);
   };
 
   const showAIActions = () => {
@@ -657,7 +753,7 @@ TechFlow MSP - L2 Support Engineer`;
 
   return (
     <div style={styles.container}>
-      {/* Header */}
+      {/* Header - Compressed */}
       <div style={styles.header}>
         <div style={styles.headerTitle}>TechFlow MSP</div>
         <div style={styles.headerSubtitle}>Sarah Chen - L2 Support Engineer</div>
@@ -669,9 +765,9 @@ TechFlow MSP - L2 Support Engineer`;
       </div>
 
       <div style={styles.main}>
-        {/* Left Panel */}
+        {/* Left Panel - Tickets List */}
         <div style={styles.leftPanel}>
-          {/* Filters Section */}
+          {/* Filters Section - Compressed */}
           <div style={styles.filtersSection}>
             <input
               type="text"
@@ -682,8 +778,8 @@ TechFlow MSP - L2 Support Engineer`;
             />
             
             <div style={styles.controlsRow}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 'medium' }}>Sort By:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'medium' }}>Sort:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -698,7 +794,7 @@ TechFlow MSP - L2 Support Engineer`;
               <select
                 value={sortFilter}
                 onChange={(e) => setSortFilter(e.target.value)}
-                style={{ ...styles.select, minWidth: '140px' }}
+                style={{ ...styles.select, minWidth: '100px' }}
               >
                 {getSortOptions().map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -714,7 +810,7 @@ TechFlow MSP - L2 Support Engineer`;
                   ...(activeTab === 'my-open' ? styles.tabActive : {})
                 }}
               >
-                My Open Tickets
+                My Open
               </button>
               <button
                 onClick={() => setActiveTab('recent')}
@@ -723,7 +819,7 @@ TechFlow MSP - L2 Support Engineer`;
                   ...(activeTab === 'recent' ? styles.tabActive : {})
                 }}
               >
-                Recently Viewed
+                Recent
               </button>
             </div>
           </div>
@@ -760,45 +856,61 @@ TechFlow MSP - L2 Support Engineer`;
 
         {/* Right Panel */}
         <div style={styles.rightPanel}>
-          {/* Ticket Overview - 32% */}
-          <div style={styles.ticketOverview}>
-            <div style={styles.ticketTitle}>
-              <span style={styles.ticketId}>
-                {selectedTicket ? `#${selectedTicket.id}` : 'Select a Ticket'}
-              </span>
-              {selectedTicket && (
-                <>
-                  <span style={{ ...styles.badge, ...getPriorityStyle(selectedTicket.priority.name) }}>
-                    {selectedTicket.priority.name} Priority
-                  </span>
-                  <span style={{ ...styles.badge, ...getStatusStyle(selectedTicket.status.name) }}>
-                    {selectedTicket.status.name}
-                  </span>
-                  <span style={{ ...styles.badge, ...styles.badgeRed }}>
-                    ⚠️ Needs Attention
-                  </span>
-                </>
-              )}
+          {/* Analysis Results - TOP SECTION - Full Width */}
+          {analysisText && (
+            <div style={styles.analysisSection}>
+              <div style={styles.sectionTitle}>Analysis Results</div>
+              <div style={styles.analysisBox}>
+                {analysisText}
+              </div>
             </div>
-            
-            {selectedTicket ? (
-              <>
+          )}
+
+          {/* Ticket Overview & Contact - Compressed Side by Side */}
+          <div style={styles.topSection}>
+            <div style={styles.ticketOverview}>
+              <div style={styles.ticketTitle}>
+                <span style={styles.ticketId}>
+                  {selectedTicket ? `#${selectedTicket.id}` : 'Select a Ticket'}
+                </span>
+                {selectedTicket && (
+                  <>
+                    <span style={{ ...styles.badge, ...getPriorityStyle(selectedTicket.priority.name) }}>
+                      {selectedTicket.priority.name}
+                    </span>
+                    <span style={{ ...styles.badge, ...getStatusStyle(selectedTicket.status.name) }}>
+                      {selectedTicket.status.name}
+                    </span>
+                    <span style={{ ...styles.badge, ...styles.badgeRed }}>
+                      ⚠️ Needs Attention
+                    </span>
+                  </>
+                )}
+              </div>
+              
+              {selectedTicket && (
                 <div style={styles.ticketDescription}>
                   <strong>Issue:</strong> {selectedTicket.initialDescription}
                 </div>
-                
+              )}
+            </div>
+            
+            {/* Contact Summary - Compressed */}
+            <div style={styles.contactSummary}>
+              <div style={styles.sectionTitle}>Contact Info</div>
+              {selectedTicket && (
                 <div style={styles.contactInfo}>
                   <div style={styles.contactField}>
                     <span style={styles.contactLabel}>Requester:</span>
                     <span style={styles.contactValue}>{selectedTicket.contact.name}</span>
                   </div>
                   <div style={styles.contactField}>
-                    <span style={styles.contactLabel}>Client Company:</span>
+                    <span style={styles.contactLabel}>Company:</span>
                     <span style={styles.contactValue}>{selectedTicket.company.name}</span>
                   </div>
                   {selectedTicket.contact.phone && (
                     <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Mobile Phone:</span>
+                      <span style={styles.contactLabel}>Phone:</span>
                       <a href={`tel:${selectedTicket.contact.phone}`} style={styles.link}>
                         {selectedTicket.contact.phone}
                       </a>
@@ -806,31 +918,26 @@ TechFlow MSP - L2 Support Engineer`;
                   )}
                   {selectedTicket.contact.email && (
                     <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Email Address:</span>
+                      <span style={styles.contactLabel}>Email:</span>
                       <a href={`mailto:${selectedTicket.contact.email}`} style={styles.link}>
                         {selectedTicket.contact.email}
                       </a>
                     </div>
                   )}
                 </div>
-              </>
-            ) : (
-              <div style={{ color: '#94a3b8' }}>
-                Select a ticket from the left panel to view details.
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* AI Engineer Assistant & Ticket Management - 23% */}
-          <div style={styles.infoGathering}>
-            {/* Left Column - AI Engineer Assistant */}
+          {/* AI Assistant & Management Buttons - Compressed */}
+          <div style={styles.actionButtonsSection}>
             <div style={styles.aiColumn}>
               <div style={styles.sectionTitle}>AI Engineer Assistant</div>
               <div style={styles.buttonGrid}>
                 <button onClick={showClientEnvironment} style={styles.button}>
                   📊 Client Environment
                 </button>
-                <button onClick={showEnterpriseSearch} style={styles.button}>
+                <button onClick={() => setShowEnterpriseModal(true)} style={styles.button}>
                   🔍 Enterprise Search
                 </button>
                 <button onClick={showAIActions} style={styles.button}>
@@ -842,7 +949,6 @@ TechFlow MSP - L2 Support Engineer`;
               </div>
             </div>
 
-            {/* Right Column - Ticket Management */}
             <div style={styles.managementColumn}>
               <div style={styles.sectionTitle}>Ticket Management</div>
               <div style={styles.buttonGrid}>
@@ -854,25 +960,16 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-         {/* Notes & Communication - 45% */}
-<div style={styles.ticketActions}>
-  {/* Analysis Display - Moved above everything else */}
-  {analysisText && (
-    <div style={{ marginBottom: '20px' }}>
-      <div style={styles.sectionTitle}>Analysis Results</div>
-      <div style={styles.analysisBox}>
-        {analysisText}
-      </div>
-    </div>
-  )}
+          {/* Notes & Communication - ALWAYS VISIBLE */}
+          <div style={styles.notesSection}>
+            <div style={styles.sectionTitle}>Notes & Communication</div>
+            
+            {/* Timer Display */}
+            <div style={{ marginBottom: '12px' }}>
+              <div style={styles.actionGroupTitle}>Time Tracking</div>
+              <div style={styles.timer}>{timerDisplay}</div>
+            </div>
 
-  <div style={styles.sectionTitle}>Notes & Communication</div>
-  
-  {/* Timer Display */}
-  <div style={{ marginBottom: '16px' }}>
-    <div style={styles.actionGroupTitle}>Time Tracking</div>
-    <div style={styles.timer}>{timerDisplay}</div>
-  </div>
             <div>
               <textarea
                 value={noteText}
@@ -890,13 +987,13 @@ TechFlow MSP - L2 Support Engineer`;
                   <option>Public Note</option>
                   <option>Resolution Note</option>
                 </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
                   <input type="checkbox" /> Request KB Article
                 </label>
               </div>
               
               {/* Action Buttons Row */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
                 <button onClick={generateAIDraft} style={styles.smallButton}>
                   🤖 AI Draft
                 </button>
@@ -923,6 +1020,83 @@ TechFlow MSP - L2 Support Engineer`;
           </div>
         </div>
       </div>
+
+      {/* Enterprise Search Modal */}
+      {showEnterpriseModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Enterprise Search</div>
+              <button 
+                onClick={() => setShowEnterpriseModal(false)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <input
+              type="text"
+              placeholder="Enter search query..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.searchInput}
+            />
+            
+            <div style={styles.checkboxGroup}>
+              <div style={styles.sectionTitle}>Search Sources:</div>
+              <label style={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={searchSources.historicalTickets}
+                  onChange={(e) => setSearchSources({...searchSources, historicalTickets: e.target.checked})}
+                />
+                Historical Tickets
+              </label>
+              <label style={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={searchSources.clientDocumentation}
+                  onChange={(e) => setSearchSources({...searchSources, clientDocumentation: e.target.checked})}
+                />
+                Client Documentation
+              </label>
+              <label style={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={searchSources.sharepoint}
+                  onChange={(e) => setSearchSources({...searchSources, sharepoint: e.target.checked})}
+                />
+                SharePoint
+              </label>
+              <label style={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={searchSources.externalSources}
+                  onChange={(e) => setSearchSources({...searchSources, externalSources: e.target.checked})}
+                />
+                External Sources
+              </label>
+            </div>
+            
+            <button 
+              onClick={handleEnterpriseSearch}
+              style={{ ...styles.button, ...styles.primaryButton, width: '100%', marginBottom: '16px' }}
+            >
+              Search
+            </button>
+            
+            {searchResults && (
+              <div>
+                <div style={styles.sectionTitle}>Search Results:</div>
+                <div style={styles.searchResults}>
+                  {searchResults}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
