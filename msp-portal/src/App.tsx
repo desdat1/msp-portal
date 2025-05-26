@@ -197,7 +197,7 @@ const styles = {
     backgroundColor: '#1e293b',
     flex: 1,
     display: 'flex',
-    height: 'calc(100vh - 380px)'
+    height: 'calc(100vh - 300px)'
   },
   analysisHalf: {
     width: '50%',
@@ -1089,7 +1089,7 @@ Why these suggestions? AI analysis of 247 similar tickets shows 94% resolution r
   };
 
   const showTicketSummary = () => {
-    setAnalysisText(`AI TICKET SUMMARY & ANALYSIS
+    setAnalysisText(`**AI TICKET SUMMARY & ANALYSIS**
 
 ⚠️ TICKET NEEDS ATTENTION
 Overall Assessment: High priority ticket with potential SLA risk. Similar issues took average 4.2 hours to resolve. Current time elapsed: 2h 15m.
@@ -1451,15 +1451,6 @@ TechFlow MSP - L2 Support Engineer`;
                 </button>
               </div>
 
-              <div style={{ flex: 1 }}>
-                <textarea
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Add notes about your investigation or actions taken..."
-                  style={{ ...styles.textarea, height: '100%', minHeight: 'auto' }}
-                />
-              </div>
-              
               <div style={styles.noteControls}>
                 <select
                   value={noteType}
@@ -1473,6 +1464,15 @@ TechFlow MSP - L2 Support Engineer`;
                 <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
                   <input type="checkbox" /> Request KB Article
                 </label>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Add notes about your investigation or actions taken..."
+                  style={{ ...styles.textarea, height: '100%', minHeight: 'auto' }}
+                />
               </div>
             </div>
           </div>
