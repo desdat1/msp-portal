@@ -443,12 +443,18 @@ const styles = {
     backgroundColor: '#1e40af',
     border: '1px solid #3b82f6',
     borderRadius: '4px',
-    padding: '6px 10px',
+    padding: '2px 8px',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '10px',
     color: '#dbeafe',
     textAlign: 'center' as const,
-    marginBottom: '10px'
+    minWidth: '60px'
+  },
+  timeTrackingHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '12px'
   },
   textarea: {
     width: '100%',
@@ -1562,7 +1568,7 @@ TechFlow MSP - L2 Support Engineer`;
             <div style={styles.notesHalf}>
               <div style={styles.sectionTitle}>Notes & Communication</div>
               
-              <div style={{ marginBottom: '12px' }}>
+              <div style={styles.timeTrackingHeader}>
                 <div style={styles.actionGroupTitle}>Time Tracking</div>
                 <div style={styles.timer}>{timerDisplay}</div>
               </div>
