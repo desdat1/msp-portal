@@ -871,7 +871,6 @@ const MSPPortal: React.FC = () => {
     windowId: null,
     offset: { x: 0, y: 0 }
   });
-
   const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [tempPriority, setTempPriority] = useState('');
@@ -962,6 +961,19 @@ const MSPPortal: React.FC = () => {
     });
   };
 
+  const handleUpdatePriorityStatus = () => {
+    if (selectedTicket) {
+      setTempPriority(selectedTicket.priority.name);
+      setTempStatus(selectedTicket.status.name);
+      setShowUpdateModal(true);
+    }
+  };
+
+  const saveUpdates = () => {
+    console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
+    setShowUpdateModal(false);
+  };
+
   useEffect(() => {
     if (!isTimerRunning) return;
     
@@ -1011,19 +1023,17 @@ const MSPPortal: React.FC = () => {
   };
 
   const getTicketBackgroundStyle = (ticket: Ticket) => {
-    // Escalated tickets get special treatment regardless of priority
     if (ticket.status.name === 'Escalated') {
       return styles.ticketEscalated;
     }
     
-    // Priority-based backgrounds for non-escalated tickets
     switch (ticket.priority.name.toLowerCase()) {
       case 'high':
         return styles.ticketHighPriority;
       case 'medium':
         return styles.ticketMediumPriority;
       default:
-        return {}; // No special background for low priority
+        return {};
     }
   };
 
@@ -1074,7 +1084,6 @@ const MSPPortal: React.FC = () => {
   };
 
   const getStatusWeight = (status: string): number => {
-    // Escalated tickets should always be at the top
     if (status.toLowerCase() === 'escalated') return 100;
     return 0;
   };
@@ -1099,15 +1108,12 @@ const MSPPortal: React.FC = () => {
       }
     })
     .sort((a, b) => {
-      // First sort by status (escalated tickets first)
       const statusDiff = getStatusWeight(b.status.name) - getStatusWeight(a.status.name);
       if (statusDiff !== 0) return statusDiff;
       
-      // Then sort by priority (high to low)
       const priorityDiff = getPriorityWeight(b.priority.name) - getPriorityWeight(a.priority.name);
       if (priorityDiff !== 0) return priorityDiff;
       
-      // Finally sort by date (newest first)
       return new Date(b.dateEntered).getTime() - new Date(a.dateEntered).getTime();
     });
 
@@ -1222,19 +1228,7 @@ Outstanding Questions:
 • Has recent configuration changed?`);
   };
 
-  const handleUpdatePriorityStatus = () => {
-    if (selectedTicket) {
-      setTempPriority(selectedTicket.priority.name);
-      setTempStatus(selectedTicket.status.name);
-      setShowUpdateModal(true);
-    }
-  };
-
-  const saveUpdates = () => {
-    // Here you would typically update the ticket data
-    console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
-    setShowUpdateModal(false);
-  };
+  const generateAIDraft = () => {
     const aiDraftText = `Hi ${selectedTicket?.contact.name},
 
 Thank you for reporting the email delivery issue. I've begun investigating the intermittent rejection of inbound messages on your Exchange server.
