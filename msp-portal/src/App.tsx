@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from 'react';
+const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
+    isDragging: false,
+    windowId: null,
+    offset: { x: 0, y: 0 }
+  });  analysisHalf: {
+    width: '50%',
+    padding: '16px',
+    borderRight: '1px solid #334155',
+    overflowY: 'auto' as const
+  },import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -101,7 +110,9 @@ const styles = {
   },
   ticketsList: {
     flex: 1,
-    overflowY: 'auto' as const
+    overflowY: 'scroll' as const,
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#475569 #334155'
   },
   ticket: {
     padding: '12px',
@@ -187,15 +198,54 @@ const styles = {
   },
   bottomSplitSection: {
     backgroundColor: '#1e293b',
-    height: '63%',
+    height: 'calc(100vh - 25% - 12% - 80px)',
     display: 'flex',
     borderBottom: '1px solid #334155'
   },
-  analysisHalf: {
-    width: '50%',
-    padding: '16px',
-    borderRight: '1px solid #334155',
-    overflowY: 'auto' as const
+  lastNotesSection: {
+    marginTop: '12px',
+    marginBottom: '8px'
+  },
+  lastNotesTitle: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#cbd5e1',
+    marginBottom: '8px'
+  },
+  lastNotesContainer: {
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '6px',
+    maxHeight: '120px',
+    overflowY: 'scroll' as const,
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#475569 #334155'
+  },
+  noteItem: {
+    padding: '8px 10px',
+    borderBottom: '1px solid #475569',
+    fontSize: '11px',
+    lineHeight: 1.4
+  },
+  noteItemLast: {
+    borderBottom: 'none'
+  },
+  noteHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '4px'
+  },
+  noteAuthor: {
+    fontWeight: '600',
+    color: '#e2e8f0'
+  },
+  noteDate: {
+    color: '#94a3b8',
+    fontSize: '10px'
+  },
+  noteText: {
+    color: '#cbd5e1'
   },
   notesHalf: {
     width: '50%',
@@ -561,11 +611,32 @@ const MSPPortal: React.FC = () => {
   });
   const [searchResults, setSearchResults] = useState('');
   const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string, position: {x: number, y: number}}>>([]);
-  const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
-    isDragging: false,
-    windowId: null,
-    offset: { x: 0, y: 0 }
-  });
+  const [lastNotes] = useState([
+    {
+      id: 1,
+      author: 'Sarah Chen',
+      date: '2h 15m ago',
+      text: 'Initial diagnosis started. Checking Exchange message queue and SMTP connectors. Will update in 30 minutes.'
+    },
+    {
+      id: 2,
+      author: 'Michael Rodriguez',
+      date: '45m ago',
+      text: 'Client confirms issue affects emails from @vendor1.com and @supplier2.com specifically. No issues with internal emails.'
+    },
+    {
+      id: 3,
+      author: 'Sarah Chen',
+      date: '30m ago',
+      text: 'Found suspicious entries in receive connector logs. Investigating IP restriction policies and authentication settings.'
+    },
+    {
+      id: 4,
+      author: 'System',
+      date: '15m ago',
+      text: 'Ticket priority escalated to High due to business impact. SLA timer: 4h 45m remaining.'
+    }
+  ]);
 
   const openAnalysisWindow = (content: string) => {
     const newWindow = {
@@ -981,9 +1052,33 @@ TechFlow MSP - L2 Support Engineer`;
               </div>
               
               {selectedTicket && (
-                <div style={styles.ticketDescription}>
-                  <strong>Issue:</strong> {selectedTicket.initialDescription}
-                </div>
+                <>
+                  <div style={styles.ticketDescription}>
+                    <strong>Issue:</strong> {selectedTicket.initialDescription}
+                  </div>
+
+                  {/* Last Notes Section */}
+                  <div style={styles.lastNotesSection}>
+                    <div style={styles.lastNotesTitle}>Last Notes</div>
+                    <div style={styles.lastNotesContainer}>
+                      {lastNotes.map((note, index) => (
+                        <div 
+                          key={note.id} 
+                          style={{
+                            ...styles.noteItem,
+                            ...(index === lastNotes.length - 1 ? styles.noteItemLast : {})
+                          }}
+                        >
+                          <div style={styles.noteHeader}>
+                            <span style={styles.noteAuthor}>{note.author}</span>
+                            <span style={styles.noteDate}>{note.date}</span>
+                          </div>
+                          <div style={styles.noteText}>{note.text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
             
