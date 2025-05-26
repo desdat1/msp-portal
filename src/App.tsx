@@ -1022,6 +1022,8 @@ const MSPPortal: React.FC = () => {
     console.log('Escalation settings:', escalationSettings);
     setShowEscalationModal(false);
   };
+
+  const saveUpdates = () => {
     console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
     setShowUpdateModal(false);
   };
