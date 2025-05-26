@@ -881,6 +881,18 @@ const MSPPortal: React.FC = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [tempPriority, setTempPriority] = useState('');
   const [tempStatus, setTempStatus] = useState('');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showWatchersModal, setShowWatchersModal] = useState(false);
+  const [showEscalationModal, setShowEscalationModal] = useState(false);
+  const [assignAction, setAssignAction] = useState('assign');
+  const [selectedEngineer, setSelectedEngineer] = useState('');
+  const [watcherType, setWatcherType] = useState('internal');
+  const [selectedWatcher, setSelectedWatcher] = useState('');
+  const [escalationSettings, setEscalationSettings] = useState({
+    changeStatus: true,
+    notifyManager: false,
+    notifyExecutive: false
+  });
 
   const [customerPOCs] = useState<{[key: string]: {name: string, phone?: string, email?: string, title?: string}}>({
     'TF-2024-001523': { name: 'David Rodriguez', phone: '(555) 123-4500', email: 'david.rodriguez@meridianfg.com', title: 'IT Director' },
@@ -975,7 +987,41 @@ const MSPPortal: React.FC = () => {
     }
   };
 
-  const saveUpdates = () => {
+  const handleAssignTeammate = () => {
+    setAssignAction('assign');
+    setSelectedEngineer('');
+    setShowAssignModal(true);
+  };
+
+  const handleAddWatchers = () => {
+    setWatcherType('internal');
+    setSelectedWatcher('');
+    setShowWatchersModal(true);
+  };
+
+  const handleEscalation = () => {
+    setEscalationSettings({
+      changeStatus: true,
+      notifyManager: false,
+      notifyExecutive: false
+    });
+    setShowEscalationModal(true);
+  };
+
+  const saveAssignment = () => {
+    console.log('Assignment:', assignAction, 'Engineer:', selectedEngineer);
+    setShowAssignModal(false);
+  };
+
+  const saveWatchers = () => {
+    console.log('Watcher type:', watcherType, 'Selected:', selectedWatcher);
+    setShowWatchersModal(false);
+  };
+
+  const saveEscalation = () => {
+    console.log('Escalation settings:', escalationSettings);
+    setShowEscalationModal(false);
+  };
     console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
     setShowUpdateModal(false);
   };
@@ -1533,10 +1579,10 @@ TechFlow MSP - L2 Support Engineer`;
             <div style={styles.managementColumn}>
               <div style={styles.sectionTitle}>Ticket Management</div>
               <div style={styles.buttonGrid}>
-                <button style={styles.button}>Assign/Add Teammate</button>
-                <button style={styles.button}>Request Escalation</button>
+                <button onClick={handleAssignTeammate} style={styles.button}>Assign/Add Teammate</button>
+                <button onClick={handleEscalation} style={styles.button}>Request Escalation</button>
                 <button onClick={handleUpdatePriorityStatus} style={styles.button}>Update Priority / Status</button>
-                <button style={styles.button}>Add Watchers</button>
+                <button onClick={handleAddWatchers} style={styles.button}>Add Watchers</button>
               </div>
             </div>
           </div>
@@ -1624,6 +1670,238 @@ TechFlow MSP - L2 Support Engineer`;
           </div>
         </div>
       </div>
+
+      {showAssignModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Assign/Add Teammate</div>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <div style={styles.checkboxGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="radio"
+                    name="assignAction"
+                    checked={assignAction === 'assign'}
+                    onChange={() => setAssignAction('assign')}
+                  />
+                  Assign ticket to engineer
+                </label>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="radio"
+                    name="assignAction"
+                    checked={assignAction === 'add'}
+                    onChange={() => setAssignAction('add')}
+                  />
+                  Add engineer as collaborator
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                Select Engineer:
+              </label>
+              <select
+                value={selectedEngineer}
+                onChange={(e) => setSelectedEngineer(e.target.value)}
+                style={{ ...styles.searchInput, marginBottom: '0' }}
+              >
+                <option value="">Choose an engineer...</option>
+                <option value="sarah-chen">Sarah Chen - L2 Support</option>
+                <option value="mike-johnson">Mike Johnson - L3 Senior</option>
+                <option value="alex-rodriguez">Alex Rodriguez - L2 Support</option>
+                <option value="jessica-kim">Jessica Kim - L1 Support</option>
+                <option value="david-park">David Park - L3 Senior</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowAssignModal(false)}
+                style={{ ...styles.button, backgroundColor: '#6b7280' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveAssignment}
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                {assignAction === 'assign' ? 'Assign Ticket' : 'Add Collaborator'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWatchersModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Add Watchers</div>
+              <button 
+                onClick={() => setShowWatchersModal(false)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <div style={styles.checkboxGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="radio"
+                    name="watcherType"
+                    checked={watcherType === 'internal'}
+                    onChange={() => setWatcherType('internal')}
+                  />
+                  Internal (MSP Team)
+                </label>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="radio"
+                    name="watcherType"
+                    checked={watcherType === 'external'}
+                    onChange={() => setWatcherType('external')}
+                  />
+                  External (Customer)
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                {watcherType === 'internal' ? 'Select MSP Team Member:' : 'Select Customer Contact:'}
+              </label>
+              <select
+                value={selectedWatcher}
+                onChange={(e) => setSelectedWatcher(e.target.value)}
+                style={{ ...styles.searchInput, marginBottom: '0' }}
+              >
+                <option value="">Choose a contact...</option>
+                {watcherType === 'internal' ? (
+                  <>
+                    <option value="manager-lisa">Lisa Chen - Engineering Manager</option>
+                    <option value="director-james">James Wilson - Technical Director</option>
+                    <option value="support-lead">Maria Garcia - Support Team Lead</option>
+                    <option value="account-manager">Tom Bradley - Account Manager</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="client-it-manager">David Rodriguez - IT Director</option>
+                    <option value="client-ceo">Michael Chen - CEO</option>
+                    <option value="client-office-manager">Sarah Kim - Office Manager</option>
+                    <option value="client-operations">Jennifer Torres - Operations Manager</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowWatchersModal(false)}
+                style={{ ...styles.button, backgroundColor: '#6b7280' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveWatchers}
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                Add Watcher
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEscalationModal && (
+        <div style={styles.modal}>
+          <div style={styles.modalContent}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Request Escalation</div>
+              <button 
+                onClick={() => setShowEscalationModal(false)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '20px' }}>
+              <div style={styles.checkboxGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={escalationSettings.changeStatus}
+                    onChange={(e) => setEscalationSettings({...escalationSettings, changeStatus: e.target.checked})}
+                  />
+                  Change ticket status to "Escalated"
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
+                Send Teams notification to:
+              </label>
+              <div style={styles.checkboxGroup}>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={escalationSettings.notifyManager}
+                    onChange={(e) => setEscalationSettings({...escalationSettings, notifyManager: e.target.checked})}
+                  />
+                  Your Manager (Lisa Chen)
+                </label>
+                <label style={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    checked={escalationSettings.notifyExecutive}
+                    onChange={(e) => setEscalationSettings({...escalationSettings, notifyExecutive: e.target.checked})}
+                  />
+                  Executive Leadership (James Wilson)
+                </label>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
+                Escalation Reason:
+              </label>
+              <textarea
+                placeholder="Describe why this ticket needs escalation..."
+                style={{ ...styles.textarea, height: '80px', marginBottom: '0' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setShowEscalationModal(false)}
+                style={{ ...styles.button, backgroundColor: '#6b7280' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={saveEscalation}
+                style={{ ...styles.button, ...styles.primaryButton }}
+              >
+                Submit Escalation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showUpdateModal && (
         <div style={styles.modal}>
