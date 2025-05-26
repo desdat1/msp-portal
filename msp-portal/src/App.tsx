@@ -1,7 +1,4 @@
-statusPending: {
-    backgroundColor: '#f3e8ff',
-    color: '#7c3aed'
-  },import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -116,6 +113,10 @@ const styles = {
     backgroundColor: '#1e40af',
     borderLeft: '4px solid #3b82f6'
   },
+  ticketEscalated: {
+    border: '2px solid #dc2626',
+    fontWeight: '600'
+  },
   ticketHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -176,13 +177,13 @@ const styles = {
     backgroundColor: '#fef3c7',
     color: '#d97706'
   },
+  statusPending: {
+    backgroundColor: '#f3e8ff',
+    color: '#7c3aed'
+  },
   statusEscalated: {
     backgroundColor: '#fef2f2',
     color: '#dc2626'
-  },
-  ticketEscalated: {
-    border: '2px solid #dc2626',
-    fontWeight: '600'
   },
   topSection: {
     backgroundColor: '#1e293b',
@@ -769,39 +770,6 @@ const mockTickets: Ticket[] = [
     initialDescription: 'OneDrive storage approaching limit. Need to increase quota for design team.',
     dateEntered: '2025-05-22T16:45:00Z',
     assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001503',
-    summary: 'Password policy compliance update',
-    company: { name: 'Financial Services Group' },
-    status: { name: 'In Progress' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Compliance Officer' },
-    initialDescription: 'Update domain password policies to meet new regulatory requirements.',
-    dateEntered: '2025-05-22T14:20:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001502',
-    summary: 'Mobile device management enrollment',
-    company: { name: 'Sales Excellence Corp' },
-    status: { name: 'Pending' },
-    priority: { name: 'Low' },
-    contact: { name: 'Sales Director', email: 'sales@excellence.com' },
-    initialDescription: 'Enroll 15 new tablets into MDM system for sales team.',
-    dateEntered: '2025-05-22T11:30:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001501',
-    summary: 'Network speed optimization analysis',
-    company: { name: 'Media Production House' },
-    status: { name: 'New' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Production Manager' },
-    initialDescription: 'Analyze network performance for large file transfers. Video editing workflow affected.',
-    dateEntered: '2025-05-22T09:15:00Z',
-    assignedEngineer: 'Alex Rodriguez'
   }
 ];
 
@@ -1007,8 +975,6 @@ const MSPPortal: React.FC = () => {
         return matchesSearch && ticket.priority.name.toLowerCase() === sortFilter;
       case 'status':
         return matchesSearch && ticket.status.name.toLowerCase().replace(' ', '-') === sortFilter;
-      case 'escalated':
-        return matchesSearch && ticket.status.name.toLowerCase() === 'escalated';
       default:
         return matchesSearch;
     }
