@@ -1,4 +1,18 @@
-import React, { useState, useEffect } from 'react';
+const [searchResults, setSearchResults] = useState('');
+
+  const openAnalysisWindow = (content: string) => {
+    const newWindow = {
+      id: Date.now().toString(),
+      title: 'Analysis Results',
+      content: content
+    };
+    setAnalysisWindows(prev => [...prev, newWindow]);
+  };
+
+  const closeAnalysisWindow = (id: string) => {
+    setAnalysisWindows(prev => prev.filter(window => window.id !== id));
+  };          {/* AI Assistant & Management Buttons */}
+          <div style={styles.actionButtonsSection}>import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -185,13 +199,37 @@ const styles = {
     display: 'flex',
     gap: '20px'
   },
-  // Analysis Results - Top full width
   analysisSection: {
     backgroundColor: '#1e293b',
     padding: '16px',
     borderBottom: '1px solid #334155',
-    height: '30%',
+    height: '35%',
     overflowY: 'auto' as const
+  },
+  analysisHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px'
+  },
+  cloneButton: {
+    padding: '4px 8px',
+    backgroundColor: '#475569',
+    border: '1px solid #64748b',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '10px',
+    color: '#e2e8f0',
+    transition: 'all 0.2s'
+  },
+  analysisPlaceholder: {
+    backgroundColor: '#334155',
+    padding: '40px',
+    borderRadius: '6px',
+    fontSize: '13px',
+    color: '#94a3b8',
+    textAlign: 'center' as const,
+    fontStyle: 'italic'
   },
   ticketOverview: {
     flex: 2,
@@ -293,7 +331,7 @@ const styles = {
   notesSection: {
     backgroundColor: '#1e293b',
     padding: '16px',
-    height: '33%',
+    height: '28%',
     overflowY: 'auto' as const
   },
   timer: {
@@ -511,7 +549,7 @@ const MSPPortal: React.FC = () => {
     sharepoint: false,
     externalSources: false
   });
-  const [searchResults, setSearchResults] = useState('');
+  const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string}>>([]);
 
   // Timer effect
   useEffect(() => {
@@ -856,17 +894,7 @@ TechFlow MSP - L2 Support Engineer`;
 
         {/* Right Panel */}
         <div style={styles.rightPanel}>
-          {/* Analysis Results - TOP SECTION - Full Width */}
-          {analysisText && (
-            <div style={styles.analysisSection}>
-              <div style={styles.sectionTitle}>Analysis Results</div>
-              <div style={styles.analysisBox}>
-                {analysisText}
-              </div>
-            </div>
-          )}
-
-          {/* Ticket Overview & Contact - Compressed Side by Side */}
+          {/* Ticket Overview & Contact - Top Section */}
           <div style={styles.topSection}>
             <div style={styles.ticketOverview}>
               <div style={styles.ticketTitle}>
@@ -929,8 +957,29 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* AI Assistant & Management Buttons - Compressed */}
-          <div style={styles.actionButtonsSection}>
+          {/* Analysis Results Section - Below Ticket Summary */}
+          <div style={styles.analysisSection}>
+            <div style={styles.analysisHeader}>
+              <div style={styles.sectionTitle}>Analysis Results</div>
+              {analysisText && (
+                <button 
+                  onClick={() => openAnalysisWindow(analysisText)}
+                  style={styles.cloneButton}
+                >
+                  📋 Clone Window
+                </button>
+              )}
+            </div>
+            {analysisText ? (
+              <div style={styles.analysisBox}>
+                {analysisText}
+              </div>
+            ) : (
+              <div style={styles.analysisPlaceholder}>
+                Click any AI Assistant button above to view analysis results here.
+              </div>
+            )}
+          </div>
             <div style={styles.aiColumn}>
               <div style={styles.sectionTitle}>AI Engineer Assistant</div>
               <div style={styles.buttonGrid}>
@@ -1097,6 +1146,37 @@ TechFlow MSP - L2 Support Engineer`;
           </div>
         </div>
       )}
+
+      {/* Floating Analysis Windows */}
+      {analysisWindows.map((window, index) => (
+        <div key={window.id} style={{
+          ...styles.modal,
+          zIndex: 1100 + index
+        }}>
+          <div style={{
+            ...styles.modalContent,
+            width: '700px',
+            height: '500px'
+          }}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>{window.title}</div>
+              <button 
+                onClick={() => closeAnalysisWindow(window.id)}
+                style={styles.closeButton}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{
+              ...styles.analysisBox,
+              height: '400px',
+              maxHeight: 'none'
+            }}>
+              {window.content}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
