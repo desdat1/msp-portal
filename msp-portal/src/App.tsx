@@ -197,7 +197,7 @@ const styles = {
     backgroundColor: '#1e293b',
     flex: 1,
     display: 'flex',
-    height: 'calc(100vh - 300px)'
+    height: 'calc(100vh - 280px)'
   },
   analysisHalf: {
     width: '50%',
