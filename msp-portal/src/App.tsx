@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+statusPending: {
+    backgroundColor: '#f3e8ff',
+    color: '#7c3aed'
+  },import React, { useState, useEffect } from 'react';
 
 const styles = {
   container: {
@@ -173,9 +176,13 @@ const styles = {
     backgroundColor: '#fef3c7',
     color: '#d97706'
   },
-  statusPending: {
-    backgroundColor: '#f3e8ff',
-    color: '#7c3aed'
+  statusEscalated: {
+    backgroundColor: '#fef2f2',
+    color: '#dc2626'
+  },
+  ticketEscalated: {
+    border: '2px solid #dc2626',
+    fontWeight: '600'
   },
   topSection: {
     backgroundColor: '#1e293b',
@@ -188,8 +195,7 @@ const styles = {
   bottomSplitSection: {
     backgroundColor: '#1e293b',
     height: 'calc(100vh - 25% - 12% - 80px)',
-    display: 'flex',
-    borderBottom: '1px solid #334155'
+    display: 'flex'
   },
   analysisHalf: {
     width: '50%',
@@ -376,7 +382,7 @@ const styles = {
   },
   textarea: {
     width: '100%',
-    minHeight: '80px',
+    minHeight: '160px',
     padding: '10px',
     border: '1px solid #475569',
     borderRadius: '4px',
@@ -556,6 +562,39 @@ const mockTickets: Ticket[] = [
     assignedEngineer: 'Sarah Chen'
   },
   {
+    id: 'TF-2024-001522',
+    summary: 'Critical network outage affecting main office',
+    company: { name: 'Apex Manufacturing' },
+    status: { name: 'Escalated' },
+    priority: { name: 'High' },
+    contact: { name: 'Jennifer Torres', phone: '(555) 987-6543' },
+    initialDescription: 'Complete network outage in main office building. 120+ users affected. Production systems down.',
+    dateEntered: '2025-05-25T07:30:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001521',
+    summary: 'Database server performance degradation',
+    company: { name: 'TechStart Solutions' },
+    status: { name: 'Escalated' },
+    priority: { name: 'High' },
+    contact: { name: 'Robert Kim' },
+    initialDescription: 'SQL Server responding slowly. Query timeouts occurring frequently. Business operations impacted.',
+    dateEntered: '2025-05-25T06:45:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
+    id: 'TF-2024-001520',
+    summary: 'Ransomware detection on workstation',
+    company: { name: 'Legal Partners LLC' },
+    status: { name: 'Escalated' },
+    priority: { name: 'High' },
+    contact: { name: 'Patricia Wilson', phone: '(555) 555-0123' },
+    initialDescription: 'Antivirus detected ransomware attempt on accounting workstation. Isolated immediately.',
+    dateEntered: '2025-05-25T08:00:00Z',
+    assignedEngineer: 'Sarah Chen'
+  },
+  {
     id: 'TF-2024-001519',
     summary: 'VPN connection dropping for remote users',
     company: { name: 'Coastal Dental Partners' },
@@ -578,6 +617,28 @@ const mockTickets: Ticket[] = [
     assignedEngineer: 'Sarah Chen'
   },
   {
+    id: 'TF-2024-001517',
+    summary: 'Printer network connectivity issues',
+    company: { name: 'Green Valley Medical' },
+    status: { name: 'In Progress' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Dr. Lisa Park' },
+    initialDescription: 'Main office printer not responding. Network connectivity appears normal.',
+    dateEntered: '2025-05-24T16:20:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001516',
+    summary: 'Office 365 sync errors for multiple users',
+    company: { name: 'Financial Advisors Inc' },
+    status: { name: 'New' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Mark Thompson', email: 'mark@fainc.com' },
+    initialDescription: 'Several users unable to sync emails and calendar items with Office 365.',
+    dateEntered: '2025-05-24T10:15:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
     id: 'TF-2024-001515',
     summary: 'Critical server backup failure - nightly job not completing',
     company: { name: 'Metropolitan Insurance' },
@@ -587,6 +648,160 @@ const mockTickets: Ticket[] = [
     initialDescription: 'Nightly backup job failing for the past 3 nights. Critical data at risk. Backup logs show timeout errors.',
     dateEntered: '2025-05-25T06:30:00Z',
     assignedEngineer: 'Sarah Chen'
+  },
+  {
+    id: 'TF-2024-001514',
+    summary: 'WiFi connectivity issues in conference rooms',
+    company: { name: 'Design Studio Pro' },
+    status: { name: 'Pending' },
+    priority: { name: 'Low' },
+    contact: { name: 'Amanda Foster' },
+    initialDescription: 'Intermittent WiFi drops in conference rooms during client presentations.',
+    dateEntered: '2025-05-24T09:30:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001513',
+    summary: 'Software licensing compliance audit request',
+    company: { name: 'Construction Partners' },
+    status: { name: 'New' },
+    priority: { name: 'Medium' },
+    contact: { name: 'James Miller', phone: '(555) 234-5678' },
+    initialDescription: 'Need comprehensive audit of all software licenses for compliance review.',
+    dateEntered: '2025-05-24T11:45:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
+    id: 'TF-2024-001512',
+    summary: 'Firewall blocking legitimate business application',
+    company: { name: 'Retail Solutions LLC' },
+    status: { name: 'In Progress' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Karen Davis' },
+    initialDescription: 'New CRM application being blocked by firewall. Need to configure appropriate rules.',
+    dateEntered: '2025-05-24T13:20:00Z',
+    assignedEngineer: 'Sarah Chen'
+  },
+  {
+    id: 'TF-2024-001511',
+    summary: 'Hard drive replacement for aging workstation',
+    company: { name: 'Accounting Plus' },
+    status: { name: 'Pending' },
+    priority: { name: 'Low' },
+    contact: { name: 'Steve Wilson' },
+    initialDescription: 'Workstation showing SMART errors. Proactive hard drive replacement needed.',
+    dateEntered: '2025-05-24T08:00:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001510',
+    summary: 'Email archive migration to new system',
+    company: { name: 'Healthcare Associates' },
+    status: { name: 'New' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Dr. Michelle Lee', email: 'mlee@healthcare.com' },
+    initialDescription: 'Need to migrate 5 years of email archives to new compliance system.',
+    dateEntered: '2025-05-23T15:30:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
+    id: 'TF-2024-001509',
+    summary: 'User account lockout issues',
+    company: { name: 'Digital Marketing Pro' },
+    status: { name: 'In Progress' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Ryan Johnson' },
+    initialDescription: 'Multiple users experiencing frequent account lockouts. AD policies may need adjustment.',
+    dateEntered: '2025-05-23T14:15:00Z',
+    assignedEngineer: 'Sarah Chen'
+  },
+  {
+    id: 'TF-2024-001508',
+    summary: 'New employee workstation setup',
+    company: { name: 'Consulting Group Elite' },
+    status: { name: 'Pending' },
+    priority: { name: 'Low' },
+    contact: { name: 'HR Department' },
+    initialDescription: 'Setup workstation and accounts for new hire starting Monday.',
+    dateEntered: '2025-05-23T12:00:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001507',
+    summary: 'SharePoint site permissions review',
+    company: { name: 'Real Estate Partners' },
+    status: { name: 'New' },
+    priority: { name: 'Low' },
+    contact: { name: 'Tony Garcia' },
+    initialDescription: 'Annual review and cleanup of SharePoint site permissions and access levels.',
+    dateEntered: '2025-05-23T10:45:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
+    id: 'TF-2024-001506',
+    summary: 'Phone system voicemail configuration',
+    company: { name: 'Insurance Brokers United' },
+    status: { name: 'In Progress' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Linda Brown', phone: '(555) 345-6789' },
+    initialDescription: 'Configure voicemail-to-email functionality for executive team.',
+    dateEntered: '2025-05-23T09:20:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001505',
+    summary: 'Antivirus policy update deployment',
+    company: { name: 'Manufacturing Solutions' },
+    status: { name: 'Pending' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Security Team' },
+    initialDescription: 'Deploy updated antivirus policies to all managed endpoints.',
+    dateEntered: '2025-05-23T08:30:00Z',
+    assignedEngineer: 'Sarah Chen'
+  },
+  {
+    id: 'TF-2024-001504',
+    summary: 'Cloud storage quota increase request',
+    company: { name: 'Architecture Firm Plus' },
+    status: { name: 'New' },
+    priority: { name: 'Low' },
+    contact: { name: 'Project Manager' },
+    initialDescription: 'OneDrive storage approaching limit. Need to increase quota for design team.',
+    dateEntered: '2025-05-22T16:45:00Z',
+    assignedEngineer: 'Alex Rodriguez'
+  },
+  {
+    id: 'TF-2024-001503',
+    summary: 'Password policy compliance update',
+    company: { name: 'Financial Services Group' },
+    status: { name: 'In Progress' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Compliance Officer' },
+    initialDescription: 'Update domain password policies to meet new regulatory requirements.',
+    dateEntered: '2025-05-22T14:20:00Z',
+    assignedEngineer: 'Sarah Chen'
+  },
+  {
+    id: 'TF-2024-001502',
+    summary: 'Mobile device management enrollment',
+    company: { name: 'Sales Excellence Corp' },
+    status: { name: 'Pending' },
+    priority: { name: 'Low' },
+    contact: { name: 'Sales Director', email: 'sales@excellence.com' },
+    initialDescription: 'Enroll 15 new tablets into MDM system for sales team.',
+    dateEntered: '2025-05-22T11:30:00Z',
+    assignedEngineer: 'Mike Johnson'
+  },
+  {
+    id: 'TF-2024-001501',
+    summary: 'Network speed optimization analysis',
+    company: { name: 'Media Production House' },
+    status: { name: 'New' },
+    priority: { name: 'Medium' },
+    contact: { name: 'Production Manager' },
+    initialDescription: 'Analyze network performance for large file transfers. Video editing workflow affected.',
+    dateEntered: '2025-05-22T09:15:00Z',
+    assignedEngineer: 'Alex Rodriguez'
   }
 ];
 
@@ -736,6 +951,7 @@ const MSPPortal: React.FC = () => {
       case 'new': return { ...styles.status, ...styles.statusNew };
       case 'in-progress': return { ...styles.status, ...styles.statusInProgress };
       case 'pending': return { ...styles.status, ...styles.statusPending };
+      case 'escalated': return { ...styles.status, ...styles.statusEscalated };
       default: return styles.status;
     }
   };
@@ -769,7 +985,8 @@ const MSPPortal: React.FC = () => {
           { value: '', label: 'All Statuses' },
           { value: 'new', label: 'New' },
           { value: 'in-progress', label: 'In Progress' },
-          { value: 'pending', label: 'Pending' }
+          { value: 'pending', label: 'Pending' },
+          { value: 'escalated', label: 'Escalated' }
         ];
       default:
         return [];
@@ -790,6 +1007,8 @@ const MSPPortal: React.FC = () => {
         return matchesSearch && ticket.priority.name.toLowerCase() === sortFilter;
       case 'status':
         return matchesSearch && ticket.status.name.toLowerCase().replace(' ', '-') === sortFilter;
+      case 'escalated':
+        return matchesSearch && ticket.status.name.toLowerCase() === 'escalated';
       default:
         return matchesSearch;
     }
@@ -1013,7 +1232,8 @@ TechFlow MSP - L2 Support Engineer`;
                 onClick={() => setSelectedTicket(ticket)}
                 style={{
                   ...styles.ticket,
-                  ...(selectedTicket?.id === ticket.id ? styles.ticketSelected : {})
+                  ...(selectedTicket?.id === ticket.id ? styles.ticketSelected : {}),
+                  ...(ticket.status.name === 'Escalated' ? styles.ticketEscalated : {})
                 }}
               >
                 <div style={styles.ticketHeader}>
