@@ -66,7 +66,10 @@ const styles = {
   },
   toggleButtonHidden: {
     right: '-15px',
-    borderRadius: '6px'
+    borderRadius: '6px',
+    position: 'fixed' as const,
+    left: '0px',
+    backgroundColor: '#475569'
   },
   rightPanel: {
     flex: 1,
@@ -139,14 +142,14 @@ const styles = {
     borderLeft: '4px solid #3b82f6'
   },
   ticketEscalated: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
     borderLeft: '4px solid #ef4444'
   },
   ticketHighPriority: {
-    backgroundColor: '#fef2f2'
+    backgroundColor: 'rgba(239, 68, 68, 0.08)'
   },
   ticketMediumPriority: {
-    backgroundColor: '#fffbeb'
+    backgroundColor: 'rgba(245, 158, 11, 0.1)'
   },
   ticketHeader: {
     display: 'flex',
