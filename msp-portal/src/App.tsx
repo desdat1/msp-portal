@@ -854,26 +854,25 @@ TechFlow MSP - L2 Support Engineer`;
             </div>
           </div>
 
-          {/* Notes & Communication - 45% */}
-          <div style={styles.ticketActions}>
-            <div style={styles.sectionTitle}>Notes & Communication</div>
-            
-            {/* Timer Display */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={styles.actionGroupTitle}>Time Tracking</div>
-              <div style={styles.timer}>{timerDisplay}</div>
-            </div>
+         {/* Notes & Communication - 45% */}
+<div style={styles.ticketActions}>
+  {/* Analysis Display - Moved above everything else */}
+  {analysisText && (
+    <div style={{ marginBottom: '20px' }}>
+      <div style={styles.sectionTitle}>Analysis Results</div>
+      <div style={styles.analysisBox}>
+        {analysisText}
+      </div>
+    </div>
+  )}
 
-            {/* Analysis Display */}
-            {analysisText && (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={styles.actionGroupTitle}>Analysis Results</div>
-                <div style={styles.analysisBox}>
-                  {analysisText}
-                </div>
-              </div>
-            )}
-
+  <div style={styles.sectionTitle}>Notes & Communication</div>
+  
+  {/* Timer Display */}
+  <div style={{ marginBottom: '16px' }}>
+    <div style={styles.actionGroupTitle}>Time Tracking</div>
+    <div style={styles.timer}>{timerDisplay}</div>
+  </div>
             <div>
               <textarea
                 value={noteText}
