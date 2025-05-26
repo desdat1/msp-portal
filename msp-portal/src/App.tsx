@@ -41,7 +41,32 @@ const styles = {
     backgroundColor: '#1e293b',
     borderRight: '1px solid #334155',
     display: 'flex' as const,
-    flexDirection: 'column' as const
+    flexDirection: 'column' as const,
+    transition: 'all 0.3s ease',
+    position: 'relative' as const
+  },
+  leftPanelHidden: {
+    width: '0',
+    overflow: 'hidden'
+  },
+  toggleButton: {
+    position: 'absolute' as const,
+    right: '-15px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '0 6px 6px 0',
+    padding: '8px 4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    color: '#e2e8f0',
+    zIndex: 10,
+    transition: 'all 0.2s'
+  },
+  toggleButtonHidden: {
+    right: '-15px',
+    borderRadius: '6px'
   },
   rightPanel: {
     flex: 1,
@@ -114,8 +139,14 @@ const styles = {
     borderLeft: '4px solid #3b82f6'
   },
   ticketEscalated: {
-    border: '2px solid #dc2626',
-    fontWeight: '600'
+    backgroundColor: '#fef2f2',
+    borderLeft: '4px solid #ef4444'
+  },
+  ticketHighPriority: {
+    backgroundColor: '#fef2f2'
+  },
+  ticketMediumPriority: {
+    backgroundColor: '#fffbeb'
   },
   ticketHeader: {
     display: 'flex',
@@ -820,6 +851,8 @@ const MSPPortal: React.FC = () => {
     offset: { x: 0, y: 0 }
   });
 
+  const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
+
   const [customerPOCs] = useState<{[key: string]: {name: string, phone?: string, email?: string, title?: string}}>({
     'TF-2024-001523': { name: 'David Rodriguez', phone: '(555) 123-4500', email: 'david.rodriguez@meridianfg.com', title: 'IT Director' },
     'TF-2024-001522': { name: 'Jennifer Torres', phone: '(555) 987-6500', email: 'j.torres@apexmfg.com', title: 'Operations Manager' },
@@ -950,6 +983,23 @@ const MSPPortal: React.FC = () => {
       case 'pending': return { ...styles.status, ...styles.statusPending };
       case 'escalated': return { ...styles.status, ...styles.statusEscalated };
       default: return styles.status;
+    }
+  };
+
+  const getTicketBackgroundStyle = (ticket: Ticket) => {
+    // Escalated tickets get special treatment regardless of priority
+    if (ticket.status.name === 'Escalated') {
+      return styles.ticketEscalated;
+    }
+    
+    // Priority-based backgrounds for non-escalated tickets
+    switch (ticket.priority.name.toLowerCase()) {
+      case 'high':
+        return styles.ticketHighPriority;
+      case 'medium':
+        return styles.ticketMediumPriority;
+      default:
+        return {}; // No special background for low priority
     }
   };
 
@@ -1163,7 +1213,21 @@ TechFlow MSP - L2 Support Engineer`;
       </div>
 
       <div style={styles.main}>
-        <div style={styles.leftPanel}>
+        <div style={{
+          ...styles.leftPanel,
+          ...(isLeftPanelVisible ? {} : styles.leftPanelHidden)
+        }}>
+          <button
+            onClick={() => setIsLeftPanelVisible(!isLeftPanelVisible)}
+            style={{
+              ...styles.toggleButton,
+              ...(isLeftPanelVisible ? {} : styles.toggleButtonHidden)
+            }}
+            title={isLeftPanelVisible ? "Hide ticket list" : "Show ticket list"}
+          >
+            {isLeftPanelVisible ? '◀' : '▶'}
+          </button>
+          
           <div style={styles.filtersSection}>
             <input
               type="text"
@@ -1228,7 +1292,7 @@ TechFlow MSP - L2 Support Engineer`;
                 style={{
                   ...styles.ticket,
                   ...(selectedTicket?.id === ticket.id ? styles.ticketSelected : {}),
-                  ...(ticket.status.name === 'Escalated' ? styles.ticketEscalated : {})
+                  ...getTicketBackgroundStyle(ticket)
                 }}
               >
                 <div style={styles.ticketHeader}>
