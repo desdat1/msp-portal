@@ -189,7 +189,7 @@ const styles = {
     backgroundColor: '#1e293b',
     padding: '16px',
     borderBottom: '1px solid #334155',
-    height: '25%',
+    minHeight: '200px',
     display: 'flex',
     gap: '20px'
   },
@@ -339,7 +339,7 @@ const styles = {
     backgroundColor: '#1e293b',
     padding: '12px 16px',
     borderBottom: '1px solid #334155',
-    height: '12%',
+    minHeight: '100px',
     display: 'flex',
     gap: '20px'
   },
