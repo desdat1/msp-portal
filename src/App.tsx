@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   Search, 
   Settings, 
@@ -753,7 +753,10 @@ const priorities = ['All Priorities', 'HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'
 const employees = ['David Kim (Manager)', 'Marcus Thompson (L3)', 'Lisa Wang (Senior)', 'Frank Chen (L2)', 'Tom Rodriguez (L1)', 'Sarah Chen (L2)', 'Mike Johnson (L2)', 'Alex Rodriguez (L1)', 'Jenny Williams (L2)'];
 
 const ImprovedEngineerApp = () => {
-  const [selectedTicket, setSelectedTicket] = useState(tickets[0]);
+  // Use live API data instead of static tickets
+  const { tickets: apiTickets, loading, error, lastUpdated, refresh } = useTickets();
+  
+  const [selectedTicket", setSelectedTicket] = useState(tickets[0]);
   const [activeFilter, setActiveFilter] = useState('My Open');
   const [selectedEngineer, setSelectedEngineer] = useState('All Engineers');
   const [selectedClient, setSelectedClient] = useState('');
@@ -804,7 +807,7 @@ const ImprovedEngineerApp = () => {
   const [shareViaTeams, setShareViaTeams] = useState(false);
   const [shareViaSMS, setShareViaSMS] = useState(false);
 
-  const filteredTickets = tickets.filter(ticket => {
+  const filteredTickets = apiTickets.filter(ticket => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!ticket.assignee.toLowerCase().includes(query) &&
@@ -898,10 +901,10 @@ const ImprovedEngineerApp = () => {
   const handleAiAction = (action: string) => {
     switch(action) {
       case 'environment':
-        setAiAnalysisResult(`🏢 Client Environment - ${selectedTicket.company}:
+        setAiAnalysisResult(`ðŸ¢ Client Environment - ${selectedTicket.company}:
         
-📊 Environment Overview:
-• Total Users: ${selectedTicket.company === 'Accounting Plus' ? '45 active licenses, 42 in use' : 
+ðŸ“Š Environment Overview:
+â€¢ Total Users: ${selectedTicket.company === 'Accounting Plus' ? '45 active licenses, 42 in use' : 
                  selectedTicket.company === 'Legal Services LLC' ? '28 active licenses, 25 in use' :
                  selectedTicket.company === 'Manufacturing Corp' ? '156 active licenses, 148 in use' :
                  selectedTicket.company === 'Healthcare Partners' ? '85 active licenses, 78 in use' :
@@ -911,7 +914,7 @@ const ImprovedEngineerApp = () => {
                  selectedTicket.company === 'Engineering Consultants' ? '48 active licenses, 44 in use' :
                  selectedTicket.company === 'Marketing Agency Pro' ? '25 active licenses, 23 in use' :
                  '73 active licenses, 68 in use'}
-• Remote Workers: ${selectedTicket.company === 'Accounting Plus' ? '18 (40% of workforce)' :
+â€¢ Remote Workers: ${selectedTicket.company === 'Accounting Plus' ? '18 (40% of workforce)' :
                     selectedTicket.company === 'Legal Services LLC' ? '22 (88% of workforce)' :
                     selectedTicket.company === 'Manufacturing Corp' ? '25 (16% of workforce)' :
                     selectedTicket.company === 'Healthcare Partners' ? '15 (19% of workforce)' :
@@ -921,50 +924,50 @@ const ImprovedEngineerApp = () => {
                     selectedTicket.company === 'Engineering Consultants' ? '35 (80% of workforce)' :
                     selectedTicket.company === 'Marketing Agency Pro' ? '20 (87% of workforce)' :
                     '45 (65% of workforce)'}
-• Primary Contact: ${selectedTicket.contact.name}
-• Phone: ${selectedTicket.contact.phone} | Email: ${selectedTicket.contact.email}
+â€¢ Primary Contact: ${selectedTicket.contact.name}
+â€¢ Phone: ${selectedTicket.contact.phone} | Email: ${selectedTicket.contact.email}
 
-💻 Technology Stack:
+ðŸ’» Technology Stack:
 ${selectedTicket.company === 'Accounting Plus' ? 
-  '• Microsoft 365 (E3 licenses)\n• QuickBooks Enterprise 2024\n• Adobe Creative Suite (5 licenses)\n• Windows 11 Pro (38 workstations)\n• Windows Server 2019 (primary domain controller)' :
+  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ QuickBooks Enterprise 2024\nâ€¢ Adobe Creative Suite (5 licenses)\nâ€¢ Windows 11 Pro (38 workstations)\nâ€¢ Windows Server 2019 (primary domain controller)' :
   selectedTicket.company === 'Legal Services LLC' ?
-  '• Microsoft 365 (E5 licenses)\n• Clio Legal Practice Management\n• Adobe Acrobat Pro DC\n• Windows 11 Pro (25 workstations)\n• Azure AD (cloud-only)' :
+  'â€¢ Microsoft 365 (E5 licenses)\nâ€¢ Clio Legal Practice Management\nâ€¢ Adobe Acrobat Pro DC\nâ€¢ Windows 11 Pro (25 workstations)\nâ€¢ Azure AD (cloud-only)' :
   selectedTicket.company === 'Manufacturing Corp' ?
-  '• Microsoft 365 (E3 licenses)\n• SAP Business One\n• AutoCAD 2024\n• Windows 10/11 Mixed (140 workstations)\n• Windows Server 2022 (domain controller)' :
+  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ SAP Business One\nâ€¢ AutoCAD 2024\nâ€¢ Windows 10/11 Mixed (140 workstations)\nâ€¢ Windows Server 2022 (domain controller)' :
   selectedTicket.company === 'Healthcare Partners' ?
-  '• Microsoft 365 (E5 licenses)\n• Epic EHR System\n• HIPAA Compliance Suite\n• Windows 11 Pro (75 workstations)\n• Windows Server 2022 (HIPAA compliant)' :
+  'â€¢ Microsoft 365 (E5 licenses)\nâ€¢ Epic EHR System\nâ€¢ HIPAA Compliance Suite\nâ€¢ Windows 11 Pro (75 workstations)\nâ€¢ Windows Server 2022 (HIPAA compliant)' :
   selectedTicket.company === 'Creative Solutions' ?
-  '• Adobe Creative Cloud Enterprise\n• Slack Business+\n• macOS Ventura (28 workstations)\n• AWS Cloud Infrastructure\n• Wacom Tablet Integration' :
+  'â€¢ Adobe Creative Cloud Enterprise\nâ€¢ Slack Business+\nâ€¢ macOS Ventura (28 workstations)\nâ€¢ AWS Cloud Infrastructure\nâ€¢ Wacom Tablet Integration' :
   selectedTicket.company === 'Financial Advisors Group' ?
-  '• Microsoft 365 (E3 licenses)\n• Bloomberg Terminal\n• FactSet Workstation\n• Windows 11 Pro (12 workstations)\n• Citrix Virtual Apps' :
+  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ Bloomberg Terminal\nâ€¢ FactSet Workstation\nâ€¢ Windows 11 Pro (12 workstations)\nâ€¢ Citrix Virtual Apps' :
   selectedTicket.company === 'Retail Operations LLC' ?
-  '• Microsoft 365 (E3 licenses)\n• Square POS System\n• Shopify Plus\n• Windows 10/11 Mixed (60 workstations)\n• Ubiquiti Network Infrastructure' :
+  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ Square POS System\nâ€¢ Shopify Plus\nâ€¢ Windows 10/11 Mixed (60 workstations)\nâ€¢ Ubiquiti Network Infrastructure' :
   selectedTicket.company === 'Engineering Consultants' ?
-  '• Microsoft 365 (E3 licenses)\n• AutoCAD 2024\n• SolidWorks 2024\n• Windows 11 Pro (40 workstations)\n• Windows Server 2022 (file server)' :
+  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ AutoCAD 2024\nâ€¢ SolidWorks 2024\nâ€¢ Windows 11 Pro (40 workstations)\nâ€¢ Windows Server 2022 (file server)' :
   selectedTicket.company === 'Marketing Agency Pro' ?
-  '• Google Workspace Enterprise\n• HubSpot Enterprise\n• Adobe Creative Cloud\n• macOS/Windows Mixed (20 workstations)\n• AWS Cloud Infrastructure' :
-  '• Google Workspace Enterprise\n• Salesforce CRM\n• Slack Business+\n• MacOS/Windows Mixed (65 workstations)\n• AWS Cloud Infrastructure'}
+  'â€¢ Google Workspace Enterprise\nâ€¢ HubSpot Enterprise\nâ€¢ Adobe Creative Cloud\nâ€¢ macOS/Windows Mixed (20 workstations)\nâ€¢ AWS Cloud Infrastructure' :
+  'â€¢ Google Workspace Enterprise\nâ€¢ Salesforce CRM\nâ€¢ Slack Business+\nâ€¢ MacOS/Windows Mixed (65 workstations)\nâ€¢ AWS Cloud Infrastructure'}
 
-🔧 Common Service Requests:
+ðŸ”§ Common Service Requests:
 ${selectedTicket.company === 'Accounting Plus' ?
-  '• Password resets: 40% of tickets\n• VPN configuration: 25% of tickets\n• Email issues: 20% of tickets\n• Software installation: 15% of tickets' :
+  'â€¢ Password resets: 40% of tickets\nâ€¢ VPN configuration: 25% of tickets\nâ€¢ Email issues: 20% of tickets\nâ€¢ Software installation: 15% of tickets' :
   selectedTicket.company === 'Legal Services LLC' ?
-  '• Document access issues: 45% of tickets\n• VPN/Remote access: 35% of tickets\n• Email security questions: 15% of tickets\n• Software licensing: 5% of tickets' :
+  'â€¢ Document access issues: 45% of tickets\nâ€¢ VPN/Remote access: 35% of tickets\nâ€¢ Email security questions: 15% of tickets\nâ€¢ Software licensing: 5% of tickets' :
   selectedTicket.company === 'Manufacturing Corp' ?
-  '• Network connectivity: 35% of tickets\n• SAP system issues: 25% of tickets\n• Hardware replacement: 20% of tickets\n• Email problems: 20% of tickets' :
+  'â€¢ Network connectivity: 35% of tickets\nâ€¢ SAP system issues: 25% of tickets\nâ€¢ Hardware replacement: 20% of tickets\nâ€¢ Email problems: 20% of tickets' :
   selectedTicket.company === 'Healthcare Partners' ?
-  '• EHR system issues: 40% of tickets\n• HIPAA compliance questions: 25% of tickets\n• Network connectivity: 20% of tickets\n• Medical device integration: 15% of tickets' :
+  'â€¢ EHR system issues: 40% of tickets\nâ€¢ HIPAA compliance questions: 25% of tickets\nâ€¢ Network connectivity: 20% of tickets\nâ€¢ Medical device integration: 15% of tickets' :
   selectedTicket.company === 'Creative Solutions' ?
-  '• Adobe software issues: 45% of tickets\n• File sharing problems: 25% of tickets\n• Hardware upgrades: 20% of tickets\n• Network performance: 10% of tickets' :
+  'â€¢ Adobe software issues: 45% of tickets\nâ€¢ File sharing problems: 25% of tickets\nâ€¢ Hardware upgrades: 20% of tickets\nâ€¢ Network performance: 10% of tickets' :
   selectedTicket.company === 'Financial Advisors Group' ?
-  '• Trading platform issues: 50% of tickets\n• Client portal access: 25% of tickets\n• Compliance software: 15% of tickets\n• Email security: 10% of tickets' :
+  'â€¢ Trading platform issues: 50% of tickets\nâ€¢ Client portal access: 25% of tickets\nâ€¢ Compliance software: 15% of tickets\nâ€¢ Email security: 10% of tickets' :
   selectedTicket.company === 'Retail Operations LLC' ?
-  '• POS system issues: 40% of tickets\n• Inventory sync problems: 30% of tickets\n• WiFi connectivity: 20% of tickets\n• Security camera maintenance: 10% of tickets' :
+  'â€¢ POS system issues: 40% of tickets\nâ€¢ Inventory sync problems: 30% of tickets\nâ€¢ WiFi connectivity: 20% of tickets\nâ€¢ Security camera maintenance: 10% of tickets' :
   selectedTicket.company === 'Engineering Consultants' ?
-  '• CAD software issues: 35% of tickets\n• License server problems: 25% of tickets\n• Network performance: 25% of tickets\n• Hardware upgrades: 15% of tickets' :
+  'â€¢ CAD software issues: 35% of tickets\nâ€¢ License server problems: 25% of tickets\nâ€¢ Network performance: 25% of tickets\nâ€¢ Hardware upgrades: 15% of tickets' :
   selectedTicket.company === 'Marketing Agency Pro' ?
-  '• Website hosting issues: 35% of tickets\n• Marketing tool integration: 30% of tickets\n• Email marketing problems: 20% of tickets\n• Analytics platform issues: 15% of tickets' :
-  '• CRM data sync issues: 30% of tickets\n• Slack integration problems: 25% of tickets\n• Mobile device setup: 25% of tickets\n• Cloud access issues: 20% of tickets'}`);
+  'â€¢ Website hosting issues: 35% of tickets\nâ€¢ Marketing tool integration: 30% of tickets\nâ€¢ Email marketing problems: 20% of tickets\nâ€¢ Analytics platform issues: 15% of tickets' :
+  'â€¢ CRM data sync issues: 30% of tickets\nâ€¢ Slack integration problems: 25% of tickets\nâ€¢ Mobile device setup: 25% of tickets\nâ€¢ Cloud access issues: 20% of tickets'}`);
         break;
       case 'knowledge':
         setActionModalType('Enterprise Knowledge Search');
@@ -972,175 +975,175 @@ ${selectedTicket.company === 'Accounting Plus' ?
         break;
       case 'actions':
         const actionPlan = selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
-          `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
         
-🔍 Initial Assessment:
+ðŸ” Initial Assessment:
 1. Review SMART error logs from Event Viewer (10 minutes)
 2. Run Windows built-in disk check: chkdsk /f /r
 3. Use manufacturer's diagnostic tool (Seagate SeaTools/WD Data Lifeguard)
 4. Check warranty status and replacement eligibility
 
-🛠️ Resolution Steps:
+ðŸ› ï¸ Resolution Steps:
 5. Backup critical data before replacement (30 minutes)
 6. Clone drive to new replacement drive using Clonezilla
 7. Install new drive and restore system
 8. Test system functionality and performance
 
-⏱️ Estimated Timeline:
-• Total resolution time: 2-3 hours
-• Client downtime: 1 hour (during replacement)
-• Follow-up: 24-hour monitoring for stability
+â±ï¸ Estimated Timeline:
+â€¢ Total resolution time: 2-3 hours
+â€¢ Client downtime: 1 hour (during replacement)
+â€¢ Follow-up: 24-hour monitoring for stability
 
-📋 Next Actions:
-• Order replacement drive (same day delivery available)
-• Schedule maintenance window with client
-• Prepare backup and cloning tools` :
+ðŸ“‹ Next Actions:
+â€¢ Order replacement drive (same day delivery available)
+â€¢ Schedule maintenance window with client
+â€¢ Prepare backup and cloning tools` :
 
           selectedTicket.title.toLowerCase().includes('ransomware') ?
-          `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
         
-🚨 IMMEDIATE CONTAINMENT:
+ðŸš¨ IMMEDIATE CONTAINMENT:
 1. ISOLATE affected workstation from network (URGENT)
 2. Preserve evidence - do NOT power down
 3. Notify management and security team
 4. Document current system state
 
-🔍 Assessment Phase:
+ðŸ” Assessment Phase:
 5. Identify ransomware variant using ID Ransomware tool
 6. Check network for lateral movement indicators
 7. Verify backup integrity and availability
 8. Assess scope of encryption damage
 
-🛠️ Recovery Steps:
+ðŸ› ï¸ Recovery Steps:
 9. Wipe and rebuild affected system from clean image
 10. Restore data from verified clean backups
 11. Apply latest security patches and updates
 12. Implement additional monitoring
 
-⏱️ Critical Timeline:
-• Immediate isolation: COMPLETED
-• Assessment: 2-4 hours
-• Full recovery: 6-8 hours
-• Security hardening: 2 hours
+â±ï¸ Critical Timeline:
+â€¢ Immediate isolation: COMPLETED
+â€¢ Assessment: 2-4 hours
+â€¢ Full recovery: 6-8 hours
+â€¢ Security hardening: 2 hours
 
-📋 Next Actions:
-• Contact cyber insurance provider
-• File incident report with appropriate authorities
-• Review and update security policies` :
+ðŸ“‹ Next Actions:
+â€¢ Contact cyber insurance provider
+â€¢ File incident report with appropriate authorities
+â€¢ Review and update security policies` :
 
           selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
-          `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
         
-🔍 Network Diagnosis:
+ðŸ” Network Diagnosis:
 1. Check physical connections and switch status lights
 2. Test internet connectivity from multiple locations
 3. Review router/firewall logs for error messages
 4. Ping test to gateway, DNS, and external sites
 
-🛠️ Resolution Steps:
+ðŸ› ï¸ Resolution Steps:
 5. Restart network equipment in proper sequence
 6. Check ISP status and contact if needed
 7. Verify DHCP scope and IP allocation
 8. Test wireless and wired connections separately
 
-⏱️ Estimated Timeline:
-• Initial diagnosis: 15-30 minutes
-• Basic troubleshooting: 30-45 minutes
-• ISP coordination (if needed): 1-4 hours
-• Full restoration: 2-6 hours
+â±ï¸ Estimated Timeline:
+â€¢ Initial diagnosis: 15-30 minutes
+â€¢ Basic troubleshooting: 30-45 minutes
+â€¢ ISP coordination (if needed): 1-4 hours
+â€¢ Full restoration: 2-6 hours
 
-📋 Next Actions:
-• Update all affected users on status
-• Document root cause for future prevention
-• Review network redundancy options` :
+ðŸ“‹ Next Actions:
+â€¢ Update all affected users on status
+â€¢ Document root cause for future prevention
+â€¢ Review network redundancy options` :
 
           selectedTicket.title.toLowerCase().includes('pos') || selectedTicket.title.toLowerCase().includes('point of sale') ?
-          `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
         
-🔍 POS System Diagnosis:
+ðŸ” POS System Diagnosis:
 1. Check network connectivity to POS terminals
 2. Verify payment processor connection status
 3. Review POS software logs for error messages
 4. Test backup payment methods
 
-🛠️ Resolution Steps:
+ðŸ› ï¸ Resolution Steps:
 5. Restart POS terminals and base station
 6. Verify network configuration and IP settings
 7. Contact payment processor if needed
 8. Test transaction processing end-to-end
 
-⏱️ Estimated Timeline:
-• Initial diagnosis: 10-15 minutes
-• Network troubleshooting: 20-30 minutes
-• Payment processor coordination: 30-60 minutes
-• Full restoration: 1-2 hours
+â±ï¸ Estimated Timeline:
+â€¢ Initial diagnosis: 10-15 minutes
+â€¢ Network troubleshooting: 20-30 minutes
+â€¢ Payment processor coordination: 30-60 minutes
+â€¢ Full restoration: 1-2 hours
 
-📋 Next Actions:
-• Implement backup payment procedures
-• Document incident for compliance
-• Schedule preventive maintenance` :
+ðŸ“‹ Next Actions:
+â€¢ Implement backup payment procedures
+â€¢ Document incident for compliance
+â€¢ Schedule preventive maintenance` :
 
-          `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
         
-🔍 Initial Assessment:
+ðŸ” Initial Assessment:
 1. Review system logs and error messages (10 minutes)
 2. Test affected functionality and document symptoms
 3. Check for recent system changes or updates
 4. Verify user permissions and access rights
 
-🛠️ Resolution Steps:
+ðŸ› ï¸ Resolution Steps:
 5. Apply appropriate troubleshooting steps based on issue type
 6. Test proposed solution in isolated environment if possible
 7. Implement fix during appropriate maintenance window
 8. Verify resolution and document steps taken
 
-⏱️ Estimated Timeline:
-• Total resolution time: 1-3 hours
-• Client impact: Minimal (low priority issue)
-• Follow-up: 24-48 hour monitoring recommended
+â±ï¸ Estimated Timeline:
+â€¢ Total resolution time: 1-3 hours
+â€¢ Client impact: Minimal (low priority issue)
+â€¢ Follow-up: 24-48 hour monitoring recommended
 
-📋 Next Actions:
-• Update client on progress and timeline
-• Schedule follow-up verification
-• Update internal documentation`;
+ðŸ“‹ Next Actions:
+â€¢ Update client on progress and timeline
+â€¢ Schedule follow-up verification
+â€¢ Update internal documentation`;
         
         setAiAnalysisResult(actionPlan);
         break;
       case 'summary':
-        setTicketSummaryContent(`📋 Ticket Summary - #${selectedTicket.id}
+        setTicketSummaryContent(`ðŸ“‹ Ticket Summary - #${selectedTicket.id}
 
-🎯 Issue Overview:
+ðŸŽ¯ Issue Overview:
 ${selectedTicket.title}
 
-🏢 Client: ${selectedTicket.company}
-👤 Contact: ${selectedTicket.contact.name}
-📞 Phone: ${selectedTicket.contact.phone}
-✉️ Email: ${selectedTicket.contact.email}
+ðŸ¢ Client: ${selectedTicket.company}
+ðŸ‘¤ Contact: ${selectedTicket.contact.name}
+ðŸ“ž Phone: ${selectedTicket.contact.phone}
+âœ‰ï¸ Email: ${selectedTicket.contact.email}
 
-⚡ Priority: ${getPriorityText(selectedTicket.priority)}
-📊 Status: ${selectedTicket.status}
-👨‍💻 Assigned: ${selectedTicket.assignee}
-🕐 Created: ${formatTimeAgo(selectedTicket.time)}
+âš¡ Priority: ${getPriorityText(selectedTicket.priority)}
+ðŸ“Š Status: ${selectedTicket.status}
+ðŸ‘¨â€ðŸ’» Assigned: ${selectedTicket.assignee}
+ðŸ• Created: ${formatTimeAgo(selectedTicket.time)}
 
-🔍 Technical Details:
+ðŸ” Technical Details:
 ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
-  '• Workstation showing SMART disk errors in Event Viewer\n• Error codes: 51, 153, 154 indicating imminent drive failure\n• User reports occasional system freezes and slow boot times\n• Drive is 3.2 years old, still under warranty' :
+  'â€¢ Workstation showing SMART disk errors in Event Viewer\nâ€¢ Error codes: 51, 153, 154 indicating imminent drive failure\nâ€¢ User reports occasional system freezes and slow boot times\nâ€¢ Drive is 3.2 years old, still under warranty' :
   selectedTicket.title.toLowerCase().includes('ransomware') ?
-  '• Workstation infected with suspected Conti ransomware variant\n• Files encrypted with .conti extension\n• Ransom note detected in multiple directories\n• System isolated from network immediately' :
+  'â€¢ Workstation infected with suspected Conti ransomware variant\nâ€¢ Files encrypted with .conti extension\nâ€¢ Ransom note detected in multiple directories\nâ€¢ System isolated from network immediately' :
   selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
-  '• Complete network connectivity loss at main office location\n• Affects approximately 148 users\n• Started during normal business hours\n• Both wired and wireless connections affected' :
+  'â€¢ Complete network connectivity loss at main office location\nâ€¢ Affects approximately 148 users\nâ€¢ Started during normal business hours\nâ€¢ Both wired and wireless connections affected' :
   selectedTicket.title.toLowerCase().includes('pos') || selectedTicket.title.toLowerCase().includes('point of sale') ?
-  '• Point of sale system completely offline\n• Affects all payment processing capabilities\n• Customer transactions cannot be completed\n• Emergency cash-only procedures implemented' :
-  '• System showing intermittent performance issues\n• User reports degraded functionality\n• Issue started approximately ' + selectedTicket.time + '\n• Business operations partially affected'}
+  'â€¢ Point of sale system completely offline\nâ€¢ Affects all payment processing capabilities\nâ€¢ Customer transactions cannot be completed\nâ€¢ Emergency cash-only procedures implemented' :
+  'â€¢ System showing intermittent performance issues\nâ€¢ User reports degraded functionality\nâ€¢ Issue started approximately ' + selectedTicket.time + '\nâ€¢ Business operations partially affected'}
 
-💼 Business Impact:
+ðŸ’¼ Business Impact:
 ${selectedTicket.priority === 'HIGH' || selectedTicket.priority === 'NEEDS_ATTENTION' ?
-  '• High priority - critical business operations affected' :
+  'â€¢ High priority - critical business operations affected' :
   selectedTicket.priority === 'MEDIUM' ?
-  '• Medium priority - affecting productivity and communications' :
-  '• Low priority - minimal business impact'}
+  'â€¢ Medium priority - affecting productivity and communications' :
+  'â€¢ Low priority - minimal business impact'}
 
-⏱️ Estimated Resolution: ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
+â±ï¸ Estimated Resolution: ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
   '2-3 hours' :
   selectedTicket.title.toLowerCase().includes('ransomware') ?
   '6-8 hours' :
@@ -1304,7 +1307,7 @@ TechFlow MSP`);
         </div>
         
         <div style={styles.userInfo}>
-          <span>Sarah Chen • L2 Support Engineer</span>
+          <span>Sarah Chen â€¢ L2 Support Engineer</span>
           <Settings size={24} style={{cursor: 'pointer'}} />
         </div>
       </div>
@@ -1315,7 +1318,7 @@ TechFlow MSP`);
           <div style={styles.sidebarHeader}>
             <div>
               <div style={styles.sidebarTitle}>My Tickets</div>
-              <div style={styles.sidebarStats}>Showing: {filteredTickets.length} • Total: {tickets.length}</div>
+              <div style={styles.sidebarStats}>Showing: {filteredTickets.length} â€¢ Total: {tickets.length}</div>
             </div>
           </div>
           
@@ -1447,7 +1450,7 @@ TechFlow MSP`);
               {selectedTicket.title}
             </div>
             <div style={styles.ticketDetailsSubtitle}>
-              #{selectedTicket.id} ({selectedTicket.assignee}) • {selectedTicket.company}
+              #{selectedTicket.id} ({selectedTicket.assignee}) â€¢ {selectedTicket.company}
             </div>
             <div style={styles.ticketDetailsActions}>
               <button 
@@ -1523,25 +1526,25 @@ TechFlow MSP`);
                       style={styles.aiButton}
                       onClick={() => handleAiAction('environment')}
                     >
-                      🔍 Client Environment
+                      ðŸ” Client Environment
                     </button>
                     <button 
                       style={styles.aiButton}
                       onClick={() => handleAiAction('knowledge')}
                     >
-                      📈 Enterprise Knowledge Search
+                      ðŸ“ˆ Enterprise Knowledge Search
                     </button>
                     <button 
                       style={styles.aiButton}
                       onClick={() => handleAiAction('actions')}
                     >
-                      ⚡ Generate AI Actions
+                      âš¡ Generate AI Actions
                     </button>
                     <button 
                       style={styles.aiButton}
                       onClick={() => handleAiAction('summary')}
                     >
-                      📋 Ticket Summary
+                      ðŸ“‹ Ticket Summary
                     </button>
                   </div>
                   
@@ -2354,38 +2357,38 @@ TechFlow MSP`);
                     if (actionModalType === 'Enterprise Knowledge Search') {
                       // Demo search functionality
                       if (searchKeywords.toLowerCase().includes('exchange')) {
-                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
+                        setSearchResults(`ðŸ” Enterprise Knowledge Search Results for "${searchKeywords}":
 
-📚 Found 8 relevant articles:
+ðŸ“š Found 8 relevant articles:
 
-📄 Historical Tickets (3 results):
-• Ticket #TF-2024-001245: "Exchange connector blocking external domains" 
-  → Resolution: Modified SMTP connector settings | Time: 45 min | Success rate: 100%
-• Ticket #TF-2024-000892: "Exchange message queue backup after domain change"
-  → Resolution: Cleared queue + restart transport service | Time: 20 min 
-• Ticket #TF-2024-000654: "Similar vendor email blocking issue"
-  → Resolution: Added domain to accepted list | Time: 15 min
+ðŸ“„ Historical Tickets (3 results):
+â€¢ Ticket #TF-2024-001245: "Exchange connector blocking external domains" 
+  â†’ Resolution: Modified SMTP connector settings | Time: 45 min | Success rate: 100%
+â€¢ Ticket #TF-2024-000892: "Exchange message queue backup after domain change"
+  â†’ Resolution: Cleared queue + restart transport service | Time: 20 min 
+â€¢ Ticket #TF-2024-000654: "Similar vendor email blocking issue"
+  â†’ Resolution: Added domain to accepted list | Time: 15 min
 
-📋 IT Glue Documentation (2 results):
-• "Exchange SMTP Connector Configuration Guide"
-  → Step-by-step instructions for domain whitelisting
-• "Common Exchange Email Flow Issues"
-  → Troubleshooting guide with PowerShell commands
+ðŸ“‹ IT Glue Documentation (2 results):
+â€¢ "Exchange SMTP Connector Configuration Guide"
+  â†’ Step-by-step instructions for domain whitelisting
+â€¢ "Common Exchange Email Flow Issues"
+  â†’ Troubleshooting guide with PowerShell commands
 
-💡 Recommended Next Steps:
+ðŸ’¡ Recommended Next Steps:
 1. Follow Historical Ticket #TF-2024-001245 resolution steps
 2. Reference IT Glue SMTP Configuration Guide
 3. Use PowerShell commands from Common Issues doc`);
                       } else {
-                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
+                        setSearchResults(`ðŸ” Enterprise Knowledge Search Results for "${searchKeywords}":
 
-📚 Found 3 relevant articles:
+ðŸ“š Found 3 relevant articles:
 
-💡 Try searching for more specific terms like:
-• "Exchange" for email server issues
-• "VPN" for remote access problems  
-• "QuickBooks" for accounting software issues
-• "Password" for authentication problems`);
+ðŸ’¡ Try searching for more specific terms like:
+â€¢ "Exchange" for email server issues
+â€¢ "VPN" for remote access problems  
+â€¢ "QuickBooks" for accounting software issues
+â€¢ "Password" for authentication problems`);
                       }
                     }
                     setShowActionModal(false);
@@ -2412,3 +2415,5 @@ TechFlow MSP`);
   );
 };
 export default ImprovedEngineerApp;
+
+
