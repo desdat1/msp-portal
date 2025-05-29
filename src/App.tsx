@@ -753,6 +753,8 @@ const priorities = ['All Priorities', 'HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'
 const employees = ['David Kim (Manager)', 'Marcus Thompson (L3)', 'Lisa Wang (Senior)', 'Frank Chen (L2)', 'Tom Rodriguez (L1)', 'Sarah Chen (L2)', 'Mike Johnson (L2)', 'Alex Rodriguez (L1)', 'Jenny Williams (L2)'];
 
 const ImprovedEngineerApp = () => {
+  // USE LIVE API DATA INSTEAD OF STATIC MOCK DATA
+  const { tickets: apiTickets, loading, error, lastUpdated, refresh } = useTickets();
   // Use live API data instead of static tickets
   const { tickets: apiTickets, loading, error, lastUpdated, refresh } = useTickets();
   
@@ -807,7 +809,7 @@ const ImprovedEngineerApp = () => {
   const [shareViaTeams, setShareViaTeams] = useState(false);
   const [shareViaSMS, setShareViaSMS] = useState(false);
 
-  const filteredTickets = apiTickets.filter(ticket => {
+  const filteredTickets = apiapiTickets.filter(ticket => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!ticket.assignee.toLowerCase().includes(query) &&
@@ -1380,7 +1382,7 @@ TechFlow MSP`);
           </div>
           
           <div style={styles.ticketsList}>
-            {filteredTickets.map(ticket => (
+            {filteredapiTickets.map(ticket => (
               <div 
                 key={ticket.id}
                 style={{
@@ -2415,5 +2417,7 @@ TechFlow MSP`);
   );
 };
 export default ImprovedEngineerApp;
+
+
 
 
