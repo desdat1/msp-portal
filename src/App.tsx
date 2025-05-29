@@ -23,8 +23,10 @@ import {
   Mail,
   MessageCircle,
   FileText,
-  Clipboard
+  Clipboard,
+  RefreshCw
 } from 'lucide-react';
+import useTickets from '../hooks/useTickets'; // Import the live data hook
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
@@ -83,6 +85,38 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '20px'
+  },
+  refreshButton: {
+    padding: '8px 12px',
+    backgroundColor: 'transparent',
+    border: '1px solid #475569',
+    borderRadius: '8px',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 200
+  },
+  errorBanner: {
+    backgroundColor: '#dc2626',
+    color: 'white',
+    padding: '12px 24px',
+    textAlign: 'center',
+    fontSize: '16px'
   },
   mainContent: {
     display: 'flex',
@@ -684,81 +718,16 @@ const styles: { [key: string]: React.CSSProperties } = {
   }
 };
 
-// Enhanced mock data with more clients and tickets
-const tickets = [
-  // Accounting Plus
-  { id: 'TF-2024-001511', priority: 'NEEDS_ATTENTION', title: 'Workstation showing SMART errors. Proactive hard drive replacement needed.', company: 'Accounting Plus', time: '2h 15m ago', status: 'In Progress', assignee: 'Sarah Chen', contact: { name: 'Steve Wilson', phone: '(555) 123-4567', email: 'steve.wilson@accountingplus.com' } },
-  { id: 'TF-2024-001512', priority: 'HIGH', title: 'QuickBooks database corruption after power outage', company: 'Accounting Plus', time: '4h 30m ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Mary Johnson', phone: '(555) 123-4568', email: 'mary.johnson@accountingplus.com' } },
-  { id: 'TF-2024-001513', priority: 'MEDIUM', title: 'New employee setup - John Smith starting Monday', company: 'Accounting Plus', time: '1d ago', status: 'Assigned', assignee: 'Mike Johnson', contact: { name: 'Steve Wilson', phone: '(555) 123-4567', email: 'steve.wilson@accountingplus.com' } },
-  { id: 'TF-2024-001514', priority: 'LOW', title: 'Adobe Creative Suite license renewal needed', company: 'Accounting Plus', time: '2d ago', status: 'Waiting', assignee: 'Alex Rodriguez', contact: { name: 'Mary Johnson', phone: '(555) 123-4568', email: 'mary.johnson@accountingplus.com' } },
-
-  // Legal Services LLC
-  { id: 'TF-2024-001520', priority: 'HIGH', title: 'Ransomware detection on workstation', company: 'Legal Services LLC', time: '30 min ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Jennifer Adams', phone: '(555) 234-5678', email: 'jadams@legalservices.com' } },
-  { id: 'TF-2024-001521', priority: 'MEDIUM', title: 'Clio practice management sync issues', company: 'Legal Services LLC', time: '3h ago', status: 'In Progress', assignee: 'Sarah Chen', contact: { name: 'Robert Martinez', phone: '(555) 234-5679', email: 'rmartinez@legalservices.com' } },
-  { id: 'TF-2024-001522', priority: 'LOW', title: 'Document scanner driver update needed', company: 'Legal Services LLC', time: '1d ago', status: 'Resolved', assignee: 'Jenny Williams', contact: { name: 'Jennifer Adams', phone: '(555) 234-5678', email: 'jadams@legalservices.com' } },
-  { id: 'TF-2024-001523', priority: 'MEDIUM', title: 'SharePoint document versioning conflicts', company: 'Legal Services LLC', time: '2d ago', status: 'Waiting', assignee: 'David Kim', contact: { name: 'Susan Clarke', phone: '(555) 234-5680', email: 'sclarke@legalservices.com' } },
-
-  // Manufacturing Corp
-  { id: 'TF-2024-001530', priority: 'MEDIUM', title: 'Critical network outage affecting main office', company: 'Manufacturing Corp', time: '45 min ago', status: 'Assigned', assignee: 'Mike Johnson', contact: { name: 'Robert Chen', phone: '(555) 345-6789', email: 'rchen@manufacturing.com' } },
-  { id: 'TF-2024-001531', priority: 'HIGH', title: 'SAP Business One performance degradation', company: 'Manufacturing Corp', time: '2h ago', status: 'In Progress', assignee: 'Marcus Thompson', contact: { name: 'Lisa Wang', phone: '(555) 345-6790', email: 'lwang@manufacturing.com' } },
-  { id: 'TF-2024-001532', priority: 'LOW', title: 'AutoCAD workstation graphics card upgrade', company: 'Manufacturing Corp', time: '1d ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Robert Chen', phone: '(555) 345-6789', email: 'rchen@manufacturing.com' } },
-  { id: 'TF-2024-001533', priority: 'MEDIUM', title: 'Email delivery delays to customers', company: 'Manufacturing Corp', time: '3d ago', status: 'Escalated', assignee: 'Alex Rodriguez', contact: { name: 'Tom Wilson', phone: '(555) 345-6791', email: 'twilson@manufacturing.com' } },
-
-  // Tech Solutions Inc
-  { id: 'TF-2024-001540', priority: 'LOW', title: 'Office server intermittently rejecting rebound messages', company: 'Tech Solutions Inc', time: '1h 2m ago', status: 'Waiting', assignee: 'Alex Rodriguez', contact: { name: 'Maria Garcia', phone: '(555) 456-7890', email: 'mgarcia@techsolutions.com' } },
-  { id: 'TF-2024-001541', priority: 'HIGH', title: 'CRM data synchronization failures', company: 'Tech Solutions Inc', time: '5h ago', status: 'In Progress', assignee: 'Jenny Williams', contact: { name: 'Carlos Rodriguez', phone: '(555) 456-7891', email: 'crodriguez@techsolutions.com' } },
-  { id: 'TF-2024-001542', priority: 'MEDIUM', title: 'VPN connection timeouts for remote workers', company: 'Tech Solutions Inc', time: '1d ago', status: 'Assigned', assignee: 'David Kim', contact: { name: 'Maria Garcia', phone: '(555) 456-7890', email: 'mgarcia@techsolutions.com' } },
-  { id: 'TF-2024-001543', priority: 'LOW', title: 'Printer network configuration update', company: 'Tech Solutions Inc', time: '4d ago', status: 'Resolved', assignee: 'Sarah Chen', contact: { name: 'James Smith', phone: '(555) 456-7892', email: 'jsmith@techsolutions.com' } },
-
-  // Healthcare Partners
-  { id: 'TF-2024-001550', priority: 'HIGH', title: 'HIPAA compliance audit - security updates needed', company: 'Healthcare Partners', time: '1h ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Dr. Patricia Lee', phone: '(555) 567-8901', email: 'plee@healthcarepartners.com' } },
-  { id: 'TF-2024-001551', priority: 'MEDIUM', title: 'Electronic Health Records system slowdown', company: 'Healthcare Partners', time: '6h ago', status: 'In Progress', assignee: 'Marcus Thompson', contact: { name: 'Nurse Manager Kim', phone: '(555) 567-8902', email: 'kkim@healthcarepartners.com' } },
-  { id: 'TF-2024-001552', priority: 'LOW', title: 'Medical device network integration', company: 'Healthcare Partners', time: '2d ago', status: 'Assigned', assignee: 'Jenny Williams', contact: { name: 'Dr. Patricia Lee', phone: '(555) 567-8901', email: 'plee@healthcarepartners.com' } },
-  { id: 'TF-2024-001553', priority: 'NEEDS_ATTENTION', title: 'Patient data backup verification failure', company: 'Healthcare Partners', time: '3d ago', status: 'Escalated', assignee: 'Mike Johnson', contact: { name: 'IT Director Jones', phone: '(555) 567-8903', email: 'ijones@healthcarepartners.com' } },
-
-  // Creative Solutions
-  { id: 'TF-2024-001560', priority: 'MEDIUM', title: 'Adobe Creative Cloud license synchronization error', company: 'Creative Solutions', time: '3h ago', status: 'Assigned', assignee: 'Alex Rodriguez', contact: { name: 'Creative Director Smith', phone: '(555) 678-9012', email: 'cdsmith@creativesolutions.com' } },
-  { id: 'TF-2024-001561', priority: 'HIGH', title: 'File server crash - project files inaccessible', company: 'Creative Solutions', time: '4h ago', status: 'In Progress', assignee: 'Sarah Chen', contact: { name: 'Project Manager Davis', phone: '(555) 678-9013', email: 'pmdavis@creativesolutions.com' } },
-  { id: 'TF-2024-001562', priority: 'LOW', title: 'Video editing workstation RAM upgrade', company: 'Creative Solutions', time: '1d ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Editor Johnson', phone: '(555) 678-9014', email: 'ejohnson@creativesolutions.com' } },
-  { id: 'TF-2024-001563', priority: 'MEDIUM', title: 'Color calibration for design monitors', company: 'Creative Solutions', time: '5d ago', status: 'Resolved', assignee: 'David Kim', contact: { name: 'Creative Director Smith', phone: '(555) 678-9012', email: 'cdsmith@creativesolutions.com' } },
-
-  // Financial Advisors Group
-  { id: 'TF-2024-001570', priority: 'HIGH', title: 'Trading platform connectivity issues', company: 'Financial Advisors Group', time: '2h ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Senior Advisor Brown', phone: '(555) 789-0123', email: 'sabrown@financialadvisors.com' } },
-  { id: 'TF-2024-001571', priority: 'MEDIUM', title: 'Client portal login authentication problems', company: 'Financial Advisors Group', time: '4h ago', status: 'In Progress', assignee: 'Jenny Williams', contact: { name: 'IT Coordinator Lee', phone: '(555) 789-0124', email: 'itlee@financialadvisors.com' } },
-  { id: 'TF-2024-001572', priority: 'LOW', title: 'Conference room display setup for client meetings', company: 'Financial Advisors Group', time: '2d ago', status: 'Assigned', assignee: 'Marcus Thompson', contact: { name: 'Office Manager Taylor', phone: '(555) 789-0125', email: 'omtaylor@financialadvisors.com' } },
-  { id: 'TF-2024-001573', priority: 'NEEDS_ATTENTION', title: 'Compliance software licensing audit', company: 'Financial Advisors Group', time: '1d ago', status: 'Waiting', assignee: 'David Kim', contact: { name: 'Compliance Officer Wilson', phone: '(555) 789-0126', email: 'cowilson@financialadvisors.com' } },
-
-  // Retail Operations LLC
-  { id: 'TF-2024-001580', priority: 'HIGH', title: 'Point of sale system offline at main store', company: 'Retail Operations LLC', time: '1h ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Store Manager Garcia', phone: '(555) 890-1234', email: 'smgarcia@retailops.com' } },
-  { id: 'TF-2024-001581', priority: 'MEDIUM', title: 'Inventory management system sync delays', company: 'Retail Operations LLC', time: '5h ago', status: 'In Progress', assignee: 'Mike Johnson', contact: { name: 'Inventory Manager Chen', phone: '(555) 890-1235', email: 'imchen@retailops.com' } },
-  { id: 'TF-2024-001582', priority: 'LOW', title: 'Customer WiFi network password update', company: 'Retail Operations LLC', time: '3d ago', status: 'Resolved', assignee: 'Alex Rodriguez', contact: { name: 'Store Manager Garcia', phone: '(555) 890-1234', email: 'smgarcia@retailops.com' } },
-  { id: 'TF-2024-001583', priority: 'MEDIUM', title: 'Security camera system maintenance', company: 'Retail Operations LLC', time: '1d ago', status: 'Assigned', assignee: 'Sarah Chen', contact: { name: 'Security Coordinator Martinez', phone: '(555) 890-1236', email: 'scmartinez@retailops.com' } },
-
-  // Engineering Consultants
-  { id: 'TF-2024-001590', priority: 'MEDIUM', title: 'CAD software license server migration', company: 'Engineering Consultants', time: '2h ago', status: 'Assigned', assignee: 'Marcus Thompson', contact: { name: 'Engineering Manager White', phone: '(555) 901-2345', email: 'emwhite@engconsultants.com' } },
-  { id: 'TF-2024-001591', priority: 'HIGH', title: 'Project database backup corruption detected', company: 'Engineering Consultants', time: '3h ago', status: 'In Progress', assignee: 'Jenny Williams', contact: { name: 'Data Manager Thompson', phone: '(555) 901-2346', email: 'dmthompson@engconsultants.com' } },
-  { id: 'TF-2024-001592', priority: 'LOW', title: 'Workstation monitor dual-display setup', company: 'Engineering Consultants', time: '1d ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Engineer Anderson', phone: '(555) 901-2347', email: 'eanderson@engconsultants.com' } },
-  { id: 'TF-2024-001593', priority: 'NEEDS_ATTENTION', title: 'Network performance optimization needed', company: 'Engineering Consultants', time: '4d ago', status: 'Escalated', assignee: 'David Kim', contact: { name: 'IT Specialist Johnson', phone: '(555) 901-2348', email: 'itsjohnson@engconsultants.com' } },
-
-  // Marketing Agency Pro
-  { id: 'TF-2024-001600', priority: 'HIGH', title: 'Website hosting server migration urgent', company: 'Marketing Agency Pro', time: '1h ago', status: 'New', assignee: 'Unassigned', contact: { name: 'Web Developer Clark', phone: '(555) 012-3456', email: 'wdclark@marketingpro.com' } },
-  { id: 'TF-2024-001601', priority: 'MEDIUM', title: 'Email marketing platform integration issues', company: 'Marketing Agency Pro', time: '6h ago', status: 'In Progress', assignee: 'Alex Rodriguez', contact: { name: 'Marketing Director Lewis', phone: '(555) 012-3457', email: 'mdlewis@marketingpro.com' } },
-  { id: 'TF-2024-001602', priority: 'LOW', title: 'Social media management tool setup', company: 'Marketing Agency Pro', time: '2d ago', status: 'Assigned', assignee: 'Sarah Chen', contact: { name: 'Social Media Manager Hall', phone: '(555) 012-3458', email: 'smmhall@marketingpro.com' } },
-  { id: 'TF-2024-001603', priority: 'MEDIUM', title: 'Analytics dashboard reporting errors', company: 'Marketing Agency Pro', time: '3d ago', status: 'Waiting', assignee: 'Mike Johnson', contact: { name: 'Analytics Specialist Young', phone: '(555) 012-3459', email: 'asyoung@marketingpro.com' } }
-];
-
 const engineers = ['Sarah Chen', 'Mike Johnson', 'Alex Rodriguez', 'Marcus Thompson', 'Jenny Williams', 'David Kim'];
 const statuses = ['All Statuses', 'New', 'Assigned', 'In Progress', 'Waiting', 'Escalated', 'Resolved'];
 const priorities = ['All Priorities', 'HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'];
 const employees = ['David Kim (Manager)', 'Marcus Thompson (L3)', 'Lisa Wang (Senior)', 'Frank Chen (L2)', 'Tom Rodriguez (L1)', 'Sarah Chen (L2)', 'Mike Johnson (L2)', 'Alex Rodriguez (L1)', 'Jenny Williams (L2)'];
 
 const ImprovedEngineerApp = () => {
-  // USE LIVE API DATA INSTEAD OF STATIC MOCK DATA
-  const { tickets: apiTickets, loading, error, lastUpdated, refresh } = useTickets();
-  // Use live API data instead of static tickets
-  const { tickets: apiTickets, loading, error, lastUpdated, refresh } = useTickets();
+  // Replace static tickets with live data hook
+  const { tickets, loading, error, lastUpdated, refreshTickets } = useTickets();
   
-  const [selectedTicket", setSelectedTicket] = useState(tickets[0]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   const [activeFilter, setActiveFilter] = useState('My Open');
   const [selectedEngineer, setSelectedEngineer] = useState('All Engineers');
   const [selectedClient, setSelectedClient] = useState('');
@@ -809,7 +778,15 @@ const ImprovedEngineerApp = () => {
   const [shareViaTeams, setShareViaTeams] = useState(false);
   const [shareViaSMS, setShareViaSMS] = useState(false);
 
-  const filteredTickets = apiapiTickets.filter(ticket => {
+  // Set initial selected ticket when tickets load
+  React.useEffect(() => {
+    if (tickets.length > 0 && !selectedTicket) {
+      setSelectedTicket(tickets[0]);
+    }
+  }, [tickets, selectedTicket]);
+
+  // Enhanced filtering with live data
+  const filteredTickets = tickets.filter(ticket => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!ticket.assignee.toLowerCase().includes(query) &&
@@ -872,6 +849,8 @@ const ImprovedEngineerApp = () => {
   };
 
   const formatTimeAgo = (timeString: string) => {
+    if (!timeString) return 'Unknown';
+    
     if (timeString.includes('h')) {
       const hours = parseInt(timeString);
       if (hours >= 24) {
@@ -880,13 +859,13 @@ const ImprovedEngineerApp = () => {
       }
       return `${hours} hour${hours > 1 ? 's' : ''} ago`;
     }
-    if (timeString.includes('min')) {
+    if (timeString.includes('min') || timeString.includes('m')) {
       const minutes = parseInt(timeString);
       if (minutes >= 60) {
         const hours = Math.floor(minutes / 60);
         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
       }
-      return '1 hour ago';
+      return timeString;
     }
     return timeString;
   };
@@ -900,260 +879,117 @@ const ImprovedEngineerApp = () => {
     setSearchResults('');
   };
 
+  // Enhanced AI actions with live ticket data
   const handleAiAction = (action: string) => {
+    if (!selectedTicket) return;
+
     switch(action) {
       case 'environment':
-        setAiAnalysisResult(`ðŸ¢ Client Environment - ${selectedTicket.company}:
+        setAiAnalysisResult(`🏢 Client Environment - ${selectedTicket.company}:
         
-ðŸ“Š Environment Overview:
-â€¢ Total Users: ${selectedTicket.company === 'Accounting Plus' ? '45 active licenses, 42 in use' : 
-                 selectedTicket.company === 'Legal Services LLC' ? '28 active licenses, 25 in use' :
-                 selectedTicket.company === 'Manufacturing Corp' ? '156 active licenses, 148 in use' :
-                 selectedTicket.company === 'Healthcare Partners' ? '85 active licenses, 78 in use' :
-                 selectedTicket.company === 'Creative Solutions' ? '32 active licenses, 29 in use' :
-                 selectedTicket.company === 'Financial Advisors Group' ? '15 active licenses, 14 in use' :
-                 selectedTicket.company === 'Retail Operations LLC' ? '67 active licenses, 62 in use' :
-                 selectedTicket.company === 'Engineering Consultants' ? '48 active licenses, 44 in use' :
-                 selectedTicket.company === 'Marketing Agency Pro' ? '25 active licenses, 23 in use' :
-                 '73 active licenses, 68 in use'}
-â€¢ Remote Workers: ${selectedTicket.company === 'Accounting Plus' ? '18 (40% of workforce)' :
-                    selectedTicket.company === 'Legal Services LLC' ? '22 (88% of workforce)' :
-                    selectedTicket.company === 'Manufacturing Corp' ? '25 (16% of workforce)' :
-                    selectedTicket.company === 'Healthcare Partners' ? '15 (19% of workforce)' :
-                    selectedTicket.company === 'Creative Solutions' ? '28 (97% of workforce)' :
-                    selectedTicket.company === 'Financial Advisors Group' ? '8 (57% of workforce)' :
-                    selectedTicket.company === 'Retail Operations LLC' ? '12 (19% of workforce)' :
-                    selectedTicket.company === 'Engineering Consultants' ? '35 (80% of workforce)' :
-                    selectedTicket.company === 'Marketing Agency Pro' ? '20 (87% of workforce)' :
-                    '45 (65% of workforce)'}
-â€¢ Primary Contact: ${selectedTicket.contact.name}
-â€¢ Phone: ${selectedTicket.contact.phone} | Email: ${selectedTicket.contact.email}
+📊 Environment Overview:
+• Company: ${selectedTicket.company}
+• Contact: ${selectedTicket.contact.name}
+• Phone: ${selectedTicket.contact.phone}
+• Email: ${selectedTicket.contact.email}
+• Current Assignee: ${selectedTicket.assignee}
 
-ðŸ’» Technology Stack:
-${selectedTicket.company === 'Accounting Plus' ? 
-  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ QuickBooks Enterprise 2024\nâ€¢ Adobe Creative Suite (5 licenses)\nâ€¢ Windows 11 Pro (38 workstations)\nâ€¢ Windows Server 2019 (primary domain controller)' :
-  selectedTicket.company === 'Legal Services LLC' ?
-  'â€¢ Microsoft 365 (E5 licenses)\nâ€¢ Clio Legal Practice Management\nâ€¢ Adobe Acrobat Pro DC\nâ€¢ Windows 11 Pro (25 workstations)\nâ€¢ Azure AD (cloud-only)' :
-  selectedTicket.company === 'Manufacturing Corp' ?
-  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ SAP Business One\nâ€¢ AutoCAD 2024\nâ€¢ Windows 10/11 Mixed (140 workstations)\nâ€¢ Windows Server 2022 (domain controller)' :
-  selectedTicket.company === 'Healthcare Partners' ?
-  'â€¢ Microsoft 365 (E5 licenses)\nâ€¢ Epic EHR System\nâ€¢ HIPAA Compliance Suite\nâ€¢ Windows 11 Pro (75 workstations)\nâ€¢ Windows Server 2022 (HIPAA compliant)' :
-  selectedTicket.company === 'Creative Solutions' ?
-  'â€¢ Adobe Creative Cloud Enterprise\nâ€¢ Slack Business+\nâ€¢ macOS Ventura (28 workstations)\nâ€¢ AWS Cloud Infrastructure\nâ€¢ Wacom Tablet Integration' :
-  selectedTicket.company === 'Financial Advisors Group' ?
-  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ Bloomberg Terminal\nâ€¢ FactSet Workstation\nâ€¢ Windows 11 Pro (12 workstations)\nâ€¢ Citrix Virtual Apps' :
-  selectedTicket.company === 'Retail Operations LLC' ?
-  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ Square POS System\nâ€¢ Shopify Plus\nâ€¢ Windows 10/11 Mixed (60 workstations)\nâ€¢ Ubiquiti Network Infrastructure' :
-  selectedTicket.company === 'Engineering Consultants' ?
-  'â€¢ Microsoft 365 (E3 licenses)\nâ€¢ AutoCAD 2024\nâ€¢ SolidWorks 2024\nâ€¢ Windows 11 Pro (40 workstations)\nâ€¢ Windows Server 2022 (file server)' :
-  selectedTicket.company === 'Marketing Agency Pro' ?
-  'â€¢ Google Workspace Enterprise\nâ€¢ HubSpot Enterprise\nâ€¢ Adobe Creative Cloud\nâ€¢ macOS/Windows Mixed (20 workstations)\nâ€¢ AWS Cloud Infrastructure' :
-  'â€¢ Google Workspace Enterprise\nâ€¢ Salesforce CRM\nâ€¢ Slack Business+\nâ€¢ MacOS/Windows Mixed (65 workstations)\nâ€¢ AWS Cloud Infrastructure'}
+🔍 Current Ticket Details:
+• Ticket ID: ${selectedTicket.id}
+• Priority: ${getPriorityText(selectedTicket.priority)}
+• Status: ${selectedTicket.status}
+• Created: ${selectedTicket.time}
+• Board: ${selectedTicket.board || 'Service Board'}
+• Type: ${selectedTicket.type || 'Service Request'}
 
-ðŸ”§ Common Service Requests:
-${selectedTicket.company === 'Accounting Plus' ?
-  'â€¢ Password resets: 40% of tickets\nâ€¢ VPN configuration: 25% of tickets\nâ€¢ Email issues: 20% of tickets\nâ€¢ Software installation: 15% of tickets' :
-  selectedTicket.company === 'Legal Services LLC' ?
-  'â€¢ Document access issues: 45% of tickets\nâ€¢ VPN/Remote access: 35% of tickets\nâ€¢ Email security questions: 15% of tickets\nâ€¢ Software licensing: 5% of tickets' :
-  selectedTicket.company === 'Manufacturing Corp' ?
-  'â€¢ Network connectivity: 35% of tickets\nâ€¢ SAP system issues: 25% of tickets\nâ€¢ Hardware replacement: 20% of tickets\nâ€¢ Email problems: 20% of tickets' :
-  selectedTicket.company === 'Healthcare Partners' ?
-  'â€¢ EHR system issues: 40% of tickets\nâ€¢ HIPAA compliance questions: 25% of tickets\nâ€¢ Network connectivity: 20% of tickets\nâ€¢ Medical device integration: 15% of tickets' :
-  selectedTicket.company === 'Creative Solutions' ?
-  'â€¢ Adobe software issues: 45% of tickets\nâ€¢ File sharing problems: 25% of tickets\nâ€¢ Hardware upgrades: 20% of tickets\nâ€¢ Network performance: 10% of tickets' :
-  selectedTicket.company === 'Financial Advisors Group' ?
-  'â€¢ Trading platform issues: 50% of tickets\nâ€¢ Client portal access: 25% of tickets\nâ€¢ Compliance software: 15% of tickets\nâ€¢ Email security: 10% of tickets' :
-  selectedTicket.company === 'Retail Operations LLC' ?
-  'â€¢ POS system issues: 40% of tickets\nâ€¢ Inventory sync problems: 30% of tickets\nâ€¢ WiFi connectivity: 20% of tickets\nâ€¢ Security camera maintenance: 10% of tickets' :
-  selectedTicket.company === 'Engineering Consultants' ?
-  'â€¢ CAD software issues: 35% of tickets\nâ€¢ License server problems: 25% of tickets\nâ€¢ Network performance: 25% of tickets\nâ€¢ Hardware upgrades: 15% of tickets' :
-  selectedTicket.company === 'Marketing Agency Pro' ?
-  'â€¢ Website hosting issues: 35% of tickets\nâ€¢ Marketing tool integration: 30% of tickets\nâ€¢ Email marketing problems: 20% of tickets\nâ€¢ Analytics platform issues: 15% of tickets' :
-  'â€¢ CRM data sync issues: 30% of tickets\nâ€¢ Slack integration problems: 25% of tickets\nâ€¢ Mobile device setup: 25% of tickets\nâ€¢ Cloud access issues: 20% of tickets'}`);
+💻 Technical Information:
+• Severity: ${selectedTicket.severity || 'Medium'}
+• Impact: ${selectedTicket.impact || 'Medium'}  
+• Urgency: ${selectedTicket.urgency || 'Medium'}
+
+📋 ConnectWise Integration:
+✅ Live data from ConnectWise API
+✅ Real-time updates every 30 seconds
+✅ Full ticket synchronization active`);
         break;
+        
       case 'knowledge':
         setActionModalType('Enterprise Knowledge Search');
         setShowActionModal(true);
         break;
+        
       case 'actions':
-        const actionPlan = selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
-          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
-        
-ðŸ” Initial Assessment:
-1. Review SMART error logs from Event Viewer (10 minutes)
-2. Run Windows built-in disk check: chkdsk /f /r
-3. Use manufacturer's diagnostic tool (Seagate SeaTools/WD Data Lifeguard)
-4. Check warranty status and replacement eligibility
+        const actionPlan = `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
 
-ðŸ› ï¸ Resolution Steps:
-5. Backup critical data before replacement (30 minutes)
-6. Clone drive to new replacement drive using Clonezilla
-7. Install new drive and restore system
-8. Test system functionality and performance
+🎯 Issue: ${selectedTicket.title}
+🏢 Client: ${selectedTicket.company}
+⚡ Priority: ${getPriorityText(selectedTicket.priority)}
 
-â±ï¸ Estimated Timeline:
-â€¢ Total resolution time: 2-3 hours
-â€¢ Client downtime: 1 hour (during replacement)
-â€¢ Follow-up: 24-hour monitoring for stability
+🔍 Analysis:
+${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
+  '• Hardware failure detected - SMART errors indicate imminent drive failure\n• Immediate backup and replacement required\n• Estimated downtime: 1-2 hours' :
+  selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
+  '• Network connectivity issue affecting multiple users\n• Check network infrastructure and ISP connectivity\n• Estimated resolution: 2-4 hours' :
+  selectedTicket.title.toLowerCase().includes('email') || selectedTicket.title.toLowerCase().includes('exchange') ?
+  '• Email system configuration issue\n• Check Exchange connectors and mail flow\n• Estimated resolution: 30-60 minutes' :
+  '• Standard service request\n• Follow established procedures\n• Estimated resolution: 1-2 hours'}
 
-ðŸ“‹ Next Actions:
-â€¢ Order replacement drive (same day delivery available)
-â€¢ Schedule maintenance window with client
-â€¢ Prepare backup and cloning tools` :
+🛠️ Recommended Actions:
+1. Contact client to confirm issue details
+2. Remote into affected system(s)
+3. Perform diagnostic assessment
+4. Implement solution with minimal downtime
+5. Test functionality and confirm resolution
+6. Document solution in knowledge base
 
-          selectedTicket.title.toLowerCase().includes('ransomware') ?
-          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
-        
-ðŸš¨ IMMEDIATE CONTAINMENT:
-1. ISOLATE affected workstation from network (URGENT)
-2. Preserve evidence - do NOT power down
-3. Notify management and security team
-4. Document current system state
-
-ðŸ” Assessment Phase:
-5. Identify ransomware variant using ID Ransomware tool
-6. Check network for lateral movement indicators
-7. Verify backup integrity and availability
-8. Assess scope of encryption damage
-
-ðŸ› ï¸ Recovery Steps:
-9. Wipe and rebuild affected system from clean image
-10. Restore data from verified clean backups
-11. Apply latest security patches and updates
-12. Implement additional monitoring
-
-â±ï¸ Critical Timeline:
-â€¢ Immediate isolation: COMPLETED
-â€¢ Assessment: 2-4 hours
-â€¢ Full recovery: 6-8 hours
-â€¢ Security hardening: 2 hours
-
-ðŸ“‹ Next Actions:
-â€¢ Contact cyber insurance provider
-â€¢ File incident report with appropriate authorities
-â€¢ Review and update security policies` :
-
-          selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
-          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
-        
-ðŸ” Network Diagnosis:
-1. Check physical connections and switch status lights
-2. Test internet connectivity from multiple locations
-3. Review router/firewall logs for error messages
-4. Ping test to gateway, DNS, and external sites
-
-ðŸ› ï¸ Resolution Steps:
-5. Restart network equipment in proper sequence
-6. Check ISP status and contact if needed
-7. Verify DHCP scope and IP allocation
-8. Test wireless and wired connections separately
-
-â±ï¸ Estimated Timeline:
-â€¢ Initial diagnosis: 15-30 minutes
-â€¢ Basic troubleshooting: 30-45 minutes
-â€¢ ISP coordination (if needed): 1-4 hours
-â€¢ Full restoration: 2-6 hours
-
-ðŸ“‹ Next Actions:
-â€¢ Update all affected users on status
-â€¢ Document root cause for future prevention
-â€¢ Review network redundancy options` :
-
-          selectedTicket.title.toLowerCase().includes('pos') || selectedTicket.title.toLowerCase().includes('point of sale') ?
-          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
-        
-ðŸ” POS System Diagnosis:
-1. Check network connectivity to POS terminals
-2. Verify payment processor connection status
-3. Review POS software logs for error messages
-4. Test backup payment methods
-
-ðŸ› ï¸ Resolution Steps:
-5. Restart POS terminals and base station
-6. Verify network configuration and IP settings
-7. Contact payment processor if needed
-8. Test transaction processing end-to-end
-
-â±ï¸ Estimated Timeline:
-â€¢ Initial diagnosis: 10-15 minutes
-â€¢ Network troubleshooting: 20-30 minutes
-â€¢ Payment processor coordination: 30-60 minutes
-â€¢ Full restoration: 1-2 hours
-
-ðŸ“‹ Next Actions:
-â€¢ Implement backup payment procedures
-â€¢ Document incident for compliance
-â€¢ Schedule preventive maintenance` :
-
-          `âš¡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
-        
-ðŸ” Initial Assessment:
-1. Review system logs and error messages (10 minutes)
-2. Test affected functionality and document symptoms
-3. Check for recent system changes or updates
-4. Verify user permissions and access rights
-
-ðŸ› ï¸ Resolution Steps:
-5. Apply appropriate troubleshooting steps based on issue type
-6. Test proposed solution in isolated environment if possible
-7. Implement fix during appropriate maintenance window
-8. Verify resolution and document steps taken
-
-â±ï¸ Estimated Timeline:
-â€¢ Total resolution time: 1-3 hours
-â€¢ Client impact: Minimal (low priority issue)
-â€¢ Follow-up: 24-48 hour monitoring recommended
-
-ðŸ“‹ Next Actions:
-â€¢ Update client on progress and timeline
-â€¢ Schedule follow-up verification
-â€¢ Update internal documentation`;
+⏱️ Next Steps:
+• Update ticket status to "In Progress"
+• Contact ${selectedTicket.contact.name} at ${selectedTicket.contact.phone}
+• Schedule maintenance window if required
+• Follow up within 24 hours`;
         
         setAiAnalysisResult(actionPlan);
         break;
+        
       case 'summary':
-        setTicketSummaryContent(`ðŸ“‹ Ticket Summary - #${selectedTicket.id}
+        setTicketSummaryContent(`📋 ConnectWise Ticket Summary - #${selectedTicket.id}
 
-ðŸŽ¯ Issue Overview:
+🎯 Issue Overview:
 ${selectedTicket.title}
 
-ðŸ¢ Client: ${selectedTicket.company}
-ðŸ‘¤ Contact: ${selectedTicket.contact.name}
-ðŸ“ž Phone: ${selectedTicket.contact.phone}
-âœ‰ï¸ Email: ${selectedTicket.contact.email}
+🏢 Client Information:
+• Company: ${selectedTicket.company}
+• Contact: ${selectedTicket.contact.name}
+• Phone: ${selectedTicket.contact.phone}
+• Email: ${selectedTicket.contact.email}
 
-âš¡ Priority: ${getPriorityText(selectedTicket.priority)}
-ðŸ“Š Status: ${selectedTicket.status}
-ðŸ‘¨â€ðŸ’» Assigned: ${selectedTicket.assignee}
-ðŸ• Created: ${formatTimeAgo(selectedTicket.time)}
+📊 Ticket Details:
+• Priority: ${getPriorityText(selectedTicket.priority)}
+• Status: ${selectedTicket.status}
+• Assignee: ${selectedTicket.assignee}
+• Created: ${selectedTicket.time}
+• Board: ${selectedTicket.board || 'Service Board'}
+• Type: ${selectedTicket.type || 'Service Request'}
 
-ðŸ” Technical Details:
-${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
-  'â€¢ Workstation showing SMART disk errors in Event Viewer\nâ€¢ Error codes: 51, 153, 154 indicating imminent drive failure\nâ€¢ User reports occasional system freezes and slow boot times\nâ€¢ Drive is 3.2 years old, still under warranty' :
-  selectedTicket.title.toLowerCase().includes('ransomware') ?
-  'â€¢ Workstation infected with suspected Conti ransomware variant\nâ€¢ Files encrypted with .conti extension\nâ€¢ Ransom note detected in multiple directories\nâ€¢ System isolated from network immediately' :
-  selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
-  'â€¢ Complete network connectivity loss at main office location\nâ€¢ Affects approximately 148 users\nâ€¢ Started during normal business hours\nâ€¢ Both wired and wireless connections affected' :
-  selectedTicket.title.toLowerCase().includes('pos') || selectedTicket.title.toLowerCase().includes('point of sale') ?
-  'â€¢ Point of sale system completely offline\nâ€¢ Affects all payment processing capabilities\nâ€¢ Customer transactions cannot be completed\nâ€¢ Emergency cash-only procedures implemented' :
-  'â€¢ System showing intermittent performance issues\nâ€¢ User reports degraded functionality\nâ€¢ Issue started approximately ' + selectedTicket.time + '\nâ€¢ Business operations partially affected'}
+🔧 Technical Classification:
+• Severity: ${selectedTicket.severity || 'Medium'}
+• Impact: ${selectedTicket.impact || 'Medium'}
+• Urgency: ${selectedTicket.urgency || 'Medium'}
 
-ðŸ’¼ Business Impact:
+💼 Business Impact:
 ${selectedTicket.priority === 'HIGH' || selectedTicket.priority === 'NEEDS_ATTENTION' ?
-  'â€¢ High priority - critical business operations affected' :
+  '• High priority - critical business operations may be affected\n• Immediate attention required' :
   selectedTicket.priority === 'MEDIUM' ?
-  'â€¢ Medium priority - affecting productivity and communications' :
-  'â€¢ Low priority - minimal business impact'}
+  '• Medium priority - normal business impact\n• Standard response time applies' :
+  '• Low priority - minimal business impact\n• Can be scheduled during normal business hours'}
 
-â±ï¸ Estimated Resolution: ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
-  '2-3 hours' :
-  selectedTicket.title.toLowerCase().includes('ransomware') ?
-  '6-8 hours' :
-  selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
-  '2-6 hours' :
-  selectedTicket.title.toLowerCase().includes('pos') ?
-  '1-2 hours' :
-  '1-3 hours'}`);
+📝 Description:
+${selectedTicket.description || 'No detailed description available'}
+
+🔗 ConnectWise Integration:
+✅ Live sync with ConnectWise system
+✅ Real-time status updates
+✅ Automated workflow triggers`);
         break;
     }
   };
@@ -1164,19 +1000,19 @@ ${selectedTicket.priority === 'HIGH' || selectedTicket.priority === 'NEEDS_ATTEN
     switch(action) {
       case 'AI Draft Response':
         setActionModalType('AI Draft Response');
-        setAiDraftText(`Dear ${selectedTicket.contact.name},
+        setAiDraftText(`Dear ${selectedTicket?.contact?.name || 'Client'},
 
 Thank you for reporting the issue. I've identified the root cause and am implementing a solution.
 
 Issue Summary:
-${selectedTicket.title}
+${selectedTicket?.title || 'Service Request'}
 
 Resolution Plan:
 1. Initial assessment and diagnosis (In Progress)
 2. Implement recommended solution (Next - 15-30 min)
 3. Test and verify functionality (Final - 10-15 min)
 
-Expected Resolution: Within ${selectedTicket.title.toLowerCase().includes('smart') ? '2-3 hours' : selectedTicket.title.toLowerCase().includes('ransomware') ? '6-8 hours' : selectedTicket.title.toLowerCase().includes('network') ? '2-6 hours' : '45 minutes'}
+Expected Resolution: Within ${selectedTicket?.title?.toLowerCase().includes('smart') ? '2-3 hours' : selectedTicket?.title?.toLowerCase().includes('ransomware') ? '6-8 hours' : selectedTicket?.title?.toLowerCase().includes('network') ? '2-6 hours' : '45 minutes'}
 I'll send an update once testing is complete.
 
 Best regards,
@@ -1191,7 +1027,7 @@ TechFlow MSP`);
         break;
       case 'Change Status':
         setActionModalType('Change Status');
-        setTimerStatusChange(selectedTicket.status);
+        setTimerStatusChange(selectedTicket?.status || '');
         setShowActionModal(true);
         break;
       case 'Stop Timer':
@@ -1291,8 +1127,32 @@ TechFlow MSP`);
 
   const isTicketExpanded = (ticketId: string) => expandedTickets.has(ticketId);
 
+  // Show loading state
+  if (loading && tickets.length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.loadingOverlay}>
+          <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+            <RefreshCw size={48} style={{ animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '600' }}>Loading ConnectWise Tickets...</div>
+            <div style={{ fontSize: '16px', color: '#94a3b8', marginTop: '8px' }}>
+              Connecting to live data
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
+      {/* Error Banner */}
+      {error && (
+        <div style={styles.errorBanner}>
+          ⚠️ Connection Error: {error} - Showing cached data
+        </div>
+      )}
+
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.logo}>TechFlow MSP - Engineer Portal</div>
@@ -1301,7 +1161,7 @@ TechFlow MSP`);
           <Search size={24} style={styles.searchIcon} />
           <input 
             type="text" 
-            placeholder="Search tickets..." 
+            placeholder="Search live ConnectWise tickets..." 
             style={styles.searchInput}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -1309,18 +1169,34 @@ TechFlow MSP`);
         </div>
         
         <div style={styles.userInfo}>
-          <span>Sarah Chen â€¢ L2 Support Engineer</span>
+          <button 
+            onClick={refreshTickets}
+            style={styles.refreshButton}
+            disabled={loading}
+          >
+            <RefreshCw size={16} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            {lastUpdated && (
+              <span style={{ fontSize: '14px' }}>
+                Updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
+          </button>
+          <span>Sarah Chen • L2 Support Engineer</span>
           <Settings size={24} style={{cursor: 'pointer'}} />
         </div>
       </div>
 
       <div style={styles.mainContent}>
-        {/* Left Sidebar - Tickets List */}
+        {/* Left Sidebar - Live Tickets List */}
         <div style={styles.ticketsSidebar}>
           <div style={styles.sidebarHeader}>
             <div>
-              <div style={styles.sidebarTitle}>My Tickets</div>
-              <div style={styles.sidebarStats}>Showing: {filteredTickets.length} â€¢ Total: {tickets.length}</div>
+              <div style={styles.sidebarTitle}>
+                ConnectWise Tickets {loading && <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+              </div>
+              <div style={styles.sidebarStats}>
+                Showing: {filteredTickets.length} • Total: {tickets.length} • Live Data ✅
+              </div>
             </div>
           </div>
           
@@ -1382,268 +1258,299 @@ TechFlow MSP`);
           </div>
           
           <div style={styles.ticketsList}>
-            {filteredapiTickets.map(ticket => (
-              <div 
-                key={ticket.id}
-                style={{
-                  ...styles.ticketCard,
-                  ...(selectedTicket.id === ticket.id ? styles.ticketCardSelected : {})
-                }}
-              >
-                <div 
-                  style={styles.ticketHeader}
-                  onClick={() => handleTicketSelect(ticket)}
-                >
-                  <div style={styles.ticketHeaderLeft}>
-                    <div style={styles.ticketNumber}>#{ticket.id} ({ticket.assignee})</div>
-                    <div style={styles.ticketTitle}>{ticket.title}</div>
-                    <div style={styles.ticketCompany}>
-                      <strong>{ticket.company}</strong> - {formatTimeAgo(ticket.time)}
-                    </div>
-                    <div style={styles.ticketMeta}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{
-                          ...styles.priorityBadge,
-                          ...getPriorityStyle(ticket.priority)
-                        }}>
-                          {getPriorityText(ticket.priority)}
-                        </span>
-                        <span style={{
-                          ...styles.statusBadge,
-                          ...getStatusStyle(ticket.status)
-                        }}>
-                          {ticket.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                    <div 
-                      style={styles.expandIcon}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleTicketExpansion(ticket.id);
-                      }}
-                    >
-                      {isTicketExpanded(ticket.id) ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                    </div>
-                  </div>
-                </div>
-                
-                {isTicketExpanded(ticket.id) && (
-                  <div style={styles.ticketDetails}>
-                    <div style={styles.quickActions}>
-                      <button style={styles.quickAction}>View Details</button>
-                      <button style={styles.quickAction}>Take Ownership</button>
-                      <button style={styles.quickAction}>Escalate</button>
-                    </div>
-                  </div>
-                )}
+            {filteredTickets.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+                {loading ? 'Loading tickets...' : 'No tickets match your filters'}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div style={styles.contentArea}>
-          {/* Ticket Header */}
-          <div style={styles.ticketDetailsHeader}>
-            <div style={styles.ticketDetailsTitle}>
-              {selectedTicket.title}
-            </div>
-            <div style={styles.ticketDetailsSubtitle}>
-              #{selectedTicket.id} ({selectedTicket.assignee}) â€¢ {selectedTicket.company}
-            </div>
-            <div style={styles.ticketDetailsActions}>
-              <button 
-                style={{...styles.actionButton, backgroundColor: '#3b82f6', borderColor: '#3b82f6', color: 'white'}}
-                onClick={() => setShowTakeActionModal(true)}
-              >
-                <MessageSquare size={24} />
-                Take Action
-              </button>
-              <button 
-                style={{...styles.actionButton, backgroundColor: '#dc2626', borderColor: '#dc2626', color: 'white'}}
-                onClick={() => handleQuickAction('escalate')}
-              >
-                <AlertTriangle size={24} />
-                Request Escalation
-              </button>
-            </div>
-          </div>
-
-          {/* Ticket Content */}
-          <div style={styles.ticketContent}>
-            <div style={styles.mainTicketArea}>
-              {/* Notes Section */}
-              <div style={styles.sectionCard}>
+            ) : (
+              filteredTickets.map(ticket => (
                 <div 
-                  style={styles.sectionHeader}
-                  onClick={() => setShowNotes(!showNotes)}
+                  key={ticket.id}
+                  style={{
+                    ...styles.ticketCard,
+                    ...(selectedTicket?.id === ticket.id ? styles.ticketCardSelected : {})
+                  }}
                 >
-                  <div style={styles.sectionTitle}>
-                    <MessageSquare size={24} color="#3b82f6" />
-                    Ticket Notes
-                  </div>
-                  {showNotes ? <Minus size={24} /> : <Plus size={24} />}
-                </div>
-                
-                {showNotes && (
-                  <div style={styles.sectionContent}>
-                    <div style={styles.noteItem}>
-                      <div style={styles.noteHeader}>
-                        <div style={styles.noteAuthor}>Sarah Chen</div>
-                        <div style={styles.noteTime}>2h 15m ago</div>
+                  <div 
+                    style={styles.ticketHeader}
+                    onClick={() => handleTicketSelect(ticket)}
+                  >
+                    <div style={styles.ticketHeaderLeft}>
+                      <div style={styles.ticketNumber}>#{ticket.id} ({ticket.assignee})</div>
+                      <div style={styles.ticketTitle}>{ticket.title}</div>
+                      <div style={styles.ticketCompany}>
+                        <strong>{ticket.company}</strong> - {formatTimeAgo(ticket.time)}
                       </div>
-                      <div style={styles.noteContent}>
-                        Initial diagnostic started. Checking system logs and running hardware diagnostics. Will update in 30 minutes.
+                      <div style={styles.ticketMeta}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{
+                            ...styles.priorityBadge,
+                            ...getPriorityStyle(ticket.priority)
+                          }}>
+                            {getPriorityText(ticket.priority)}
+                          </span>
+                          <span style={{
+                            ...styles.statusBadge,
+                            ...getStatusStyle(ticket.status)
+                          }}>
+                            {ticket.status}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div style={styles.noteItem}>
-                      <div style={styles.noteHeader}>
-                        <div style={styles.noteAuthor}>Michael Rodriguez</div>
-                        <div style={styles.noteTime}>45m ago</div>
-                      </div>
-                      <div style={styles.noteContent}>
-                        Client confirms system has been freezing intermittently. SMART errors visible in Event Viewer. Recommending immediate backup and drive replacement.
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      <div 
+                        style={styles.expandIcon}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTicketExpansion(ticket.id);
+                        }}
+                      >
+                        {isTicketExpanded(ticket.id) ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* AI Assistant Section */}
-              <div style={styles.sectionCard}>
-                <div style={styles.sectionHeader}>
-                  <div style={styles.sectionTitle}>
-                    <Brain size={24} color="#3b82f6" />
-                    AI Engineer Assistant
-                  </div>
-                </div>
-                
-                <div style={styles.sectionContent}>
-                  <div style={styles.aiActions}>
-                    <button 
-                      style={styles.aiButton}
-                      onClick={() => handleAiAction('environment')}
-                    >
-                      ðŸ” Client Environment
-                    </button>
-                    <button 
-                      style={styles.aiButton}
-                      onClick={() => handleAiAction('knowledge')}
-                    >
-                      ðŸ“ˆ Enterprise Knowledge Search
-                    </button>
-                    <button 
-                      style={styles.aiButton}
-                      onClick={() => handleAiAction('actions')}
-                    >
-                      âš¡ Generate AI Actions
-                    </button>
-                    <button 
-                      style={styles.aiButton}
-                      onClick={() => handleAiAction('summary')}
-                    >
-                      ðŸ“‹ Ticket Summary
-                    </button>
                   </div>
                   
-                  <div style={styles.analysisResults}>
-                    {ticketSummaryContent ? (
-                      <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
-                        {ticketSummaryContent}
+                  {isTicketExpanded(ticket.id) && (
+                    <div style={styles.ticketDetails}>
+                      <div style={styles.quickActions}>
+                        <button style={styles.quickAction}>View Details</button>
+                        <button style={styles.quickAction}>Take Ownership</button>
+                        <button style={styles.quickAction}>Escalate</button>
                       </div>
-                    ) : aiAnalysisResult ? (
-                      <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
-                        {aiAnalysisResult}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Main Content Area - Show selected ticket or placeholder */}
+        {selectedTicket ? (
+          <div style={styles.contentArea}>
+            {/* Ticket Header */}
+            <div style={styles.ticketDetailsHeader}>
+              <div style={styles.ticketDetailsTitle}>
+                {selectedTicket.title}
+              </div>
+              <div style={styles.ticketDetailsSubtitle}>
+                #{selectedTicket.id} ({selectedTicket.assignee}) • {selectedTicket.company}
+              </div>
+              <div style={styles.ticketDetailsActions}>
+                <button 
+                  style={{...styles.actionButton, backgroundColor: '#3b82f6', borderColor: '#3b82f6', color: 'white'}}
+                  onClick={() => setShowTakeActionModal(true)}
+                >
+                  <MessageSquare size={24} />
+                  Take Action
+                </button>
+                <button 
+                  style={{...styles.actionButton, backgroundColor: '#dc2626', borderColor: '#dc2626', color: 'white'}}
+                  onClick={() => handleQuickAction('escalate')}
+                >
+                  <AlertTriangle size={24} />
+                  Request Escalation
+                </button>
+              </div>
+            </div>
+
+            {/* Ticket Content */}
+            <div style={styles.ticketContent}>
+              <div style={styles.mainTicketArea}>
+                {/* Notes Section */}
+                <div style={styles.sectionCard}>
+                  <div 
+                    style={styles.sectionHeader}
+                    onClick={() => setShowNotes(!showNotes)}
+                  >
+                    <div style={styles.sectionTitle}>
+                      <MessageSquare size={24} color="#3b82f6" />
+                      ConnectWise Ticket Notes
+                    </div>
+                    {showNotes ? <Minus size={24} /> : <Plus size={24} />}
+                  </div>
+                  
+                  {showNotes && (
+                    <div style={styles.sectionContent}>
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>ConnectWise System</div>
+                          <div style={styles.noteTime}>{selectedTicket.time}</div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          {selectedTicket.description || 'Initial ticket description from ConnectWise system.'}
+                        </div>
                       </div>
-                    ) : searchResults ? (
-                      <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
-                        {searchResults}
+                      
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>AI Assistant</div>
+                          <div style={styles.noteTime}>Live Analysis</div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          Ticket automatically imported from ConnectWise. Priority: {getPriorityText(selectedTicket.priority)}, 
+                          Status: {selectedTicket.status}. Ready for AI-assisted resolution.
+                        </div>
                       </div>
-                    ) : (
-                      <div style={styles.analysisPlaceholder}>
-                        Click any AI Assistant button above to view analysis results here.
-                      </div>
-                    )}
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Assistant Section */}
+                <div style={styles.sectionCard}>
+                  <div style={styles.sectionHeader}>
+                    <div style={styles.sectionTitle}>
+                      <Brain size={24} color="#3b82f6" />
+                      AI Engineer Assistant - ConnectWise Integration
+                    </div>
+                  </div>
+                  
+                  <div style={styles.sectionContent}>
+                    <div style={styles.aiActions}>
+                      <button 
+                        style={styles.aiButton}
+                        onClick={() => handleAiAction('environment')}
+                      >
+                        🔍 Live Client Environment
+                      </button>
+                      <button 
+                        style={styles.aiButton}
+                        onClick={() => handleAiAction('knowledge')}
+                      >
+                        📈 Enterprise Knowledge Search
+                      </button>
+                      <button 
+                        style={styles.aiButton}
+                        onClick={() => handleAiAction('actions')}
+                      >
+                        ⚡ Generate AI Actions
+                      </button>
+                      <button 
+                        style={styles.aiButton}
+                        onClick={() => handleAiAction('summary')}
+                      >
+                        📋 ConnectWise Summary
+                      </button>
+                    </div>
+                    
+                    <div style={styles.analysisResults}>
+                      {ticketSummaryContent ? (
+                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                          {ticketSummaryContent}
+                        </div>
+                      ) : aiAnalysisResult ? (
+                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                          {aiAnalysisResult}
+                        </div>
+                      ) : searchResults ? (
+                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                          {searchResults}
+                        </div>
+                      ) : (
+                        <div style={styles.analysisPlaceholder}>
+                          Click any AI Assistant button above to analyze this ConnectWise ticket.
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div style={styles.rightSidebar}>
-          {/* Contact Info */}
-          <div style={styles.sidebarSection}>
-            <div style={styles.sidebarSectionTitle}>Contact Information</div>
-            
-            <div style={styles.contactField}>
-              <div style={styles.contactLabel}>Requestor</div>
-              <div style={styles.contactValue}>{selectedTicket.contact.name}</div>
-            </div>
-            
-            <div style={styles.contactField}>
-              <div style={styles.contactLabel}>Company</div>
-              <div style={styles.contactValue}>{selectedTicket.company}</div>
-            </div>
-            
-            <div style={styles.contactField}>
-              <div style={styles.contactLabel}>Phone</div>
-              <div style={styles.contactValue}>{selectedTicket.contact.phone}</div>
-            </div>
-            
-            <div style={styles.contactField}>
-              <div style={styles.contactLabel}>Email</div>
-              <div style={styles.contactValue}>{selectedTicket.contact.email}</div>
-            </div>
-          </div>
-
-          {/* Time Tracking */}
-          <div style={styles.sidebarSection}>
-            <div style={styles.sidebarSectionTitle}>Time Tracking</div>
-            
-            <div style={styles.timeTracking}>
-              <div style={styles.timeDisplay}>02:15:42</div>
-              <div style={styles.timeButtons}>
-                <button 
-                  style={styles.timeButton}
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                >
-                  {isTimerRunning ? <Pause size={18} /> : <Play size={18} />}
-                  {isTimerRunning ? 'Pause' : 'Start'}
-                </button>
-                <button style={styles.timeButton}>
-                  <Timer size={18} />
-                  Log Time
-                </button>
+        ) : (
+          <div style={styles.contentArea}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <div style={{ textAlign: 'center', color: '#94a3b8' }}>
+                <MessageSquare size={64} style={{ marginBottom: '20px' }} />
+                <h2>Select a ConnectWise Ticket</h2>
+                <p>Choose a ticket from the sidebar to view details and AI analysis</p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Quick Actions */}
-          <div style={styles.sidebarSection}>
-            <div style={styles.sidebarSectionTitle}>Quick Actions</div>
-            
-            <button 
-              style={styles.managementButton}
-              onClick={() => handleQuickAction('assign')}
-            >
-              <Users size={24} />
-              Assign/Add Teammate
-            </button>
-            <button 
-              style={styles.managementButton}
-              onClick={() => handleQuickAction('watchers')}
-            >
-              <User size={24} />
-              Add Watchers
-            </button>
+        {/* Right Sidebar */}
+        {selectedTicket && (
+          <div style={styles.rightSidebar}>
+            {/* Contact Info */}
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>ConnectWise Contact Info</div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Requestor</div>
+                <div style={styles.contactValue}>{selectedTicket.contact.name}</div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Company</div>
+                <div style={styles.contactValue}>{selectedTicket.company}</div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Phone</div>
+                <div style={styles.contactValue}>{selectedTicket.contact.phone}</div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Email</div>
+                <div style={styles.contactValue}>{selectedTicket.contact.email}</div>
+              </div>
+
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Ticket Board</div>
+                <div style={styles.contactValue}>{selectedTicket.board || 'Service Board'}</div>
+              </div>
+
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>Type</div>
+                <div style={styles.contactValue}>{selectedTicket.type || 'Service Request'}</div>
+              </div>
+            </div>
+
+            {/* Time Tracking */}
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>Time Tracking</div>
+              
+              <div style={styles.timeTracking}>
+                <div style={styles.timeDisplay}>02:15:42</div>
+                <div style={styles.timeButtons}>
+                  <button 
+                    style={styles.timeButton}
+                    onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  >
+                    {isTimerRunning ? <Pause size={18} /> : <Play size={18} />}
+                    {isTimerRunning ? 'Pause' : 'Start'}
+                  </button>
+                  <button style={styles.timeButton}>
+                    <Timer size={18} />
+                    Log Time
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>Quick Actions</div>
+              
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleQuickAction('assign')}
+              >
+                <Users size={24} />
+                Assign/Add Teammate
+              </button>
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleQuickAction('watchers')}
+              >
+                <User size={24} />
+                Add Watchers
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Take Action Modal */}
@@ -1765,15 +1672,6 @@ TechFlow MSP`);
                   <div style={styles.formField}>
                     <label style={styles.formLabel}>Search Sources</label>
                     <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={searchHistoricalTickets}
-                          onChange={(e) => setSearchHistoricalTickets(e.target.checked)}
-                          style={styles.checkbox}
-                        />
-                        Historical Tickets
-                      </label>
                       <label style={styles.checkboxLabel}>
                         <input
                           type="checkbox"
@@ -1981,7 +1879,7 @@ TechFlow MSP`);
                       Timer Stopped: 02:15:42
                     </div>
                     <div style={{ color: '#94a3b8', fontSize: '18px' }}>
-                      Time logged for ticket #{selectedTicket.id}
+                      Time logged for ticket #{selectedTicket?.id}
                     </div>
                   </div>
 
@@ -2359,38 +2257,38 @@ TechFlow MSP`);
                     if (actionModalType === 'Enterprise Knowledge Search') {
                       // Demo search functionality
                       if (searchKeywords.toLowerCase().includes('exchange')) {
-                        setSearchResults(`ðŸ” Enterprise Knowledge Search Results for "${searchKeywords}":
+                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
 
-ðŸ“š Found 8 relevant articles:
+📚 Found 8 relevant articles:
 
-ðŸ“„ Historical Tickets (3 results):
-â€¢ Ticket #TF-2024-001245: "Exchange connector blocking external domains" 
-  â†’ Resolution: Modified SMTP connector settings | Time: 45 min | Success rate: 100%
-â€¢ Ticket #TF-2024-000892: "Exchange message queue backup after domain change"
-  â†’ Resolution: Cleared queue + restart transport service | Time: 20 min 
-â€¢ Ticket #TF-2024-000654: "Similar vendor email blocking issue"
-  â†’ Resolution: Added domain to accepted list | Time: 15 min
+📄 Historical Tickets (3 results):
+• Ticket #TF-2024-001245: "Exchange connector blocking external domains" 
+  → Resolution: Modified SMTP connector settings | Time: 45 min | Success rate: 100%
+• Ticket #TF-2024-000892: "Exchange message queue backup after domain change"
+  → Resolution: Cleared queue + restart transport service | Time: 20 min 
+• Ticket #TF-2024-000654: "Similar vendor email blocking issue"
+  → Resolution: Added domain to accepted list | Time: 15 min
 
-ðŸ“‹ IT Glue Documentation (2 results):
-â€¢ "Exchange SMTP Connector Configuration Guide"
-  â†’ Step-by-step instructions for domain whitelisting
-â€¢ "Common Exchange Email Flow Issues"
-  â†’ Troubleshooting guide with PowerShell commands
+📋 IT Glue Documentation (2 results):
+• "Exchange SMTP Connector Configuration Guide"
+  → Step-by-step instructions for domain whitelisting
+• "Common Exchange Email Flow Issues"
+  → Troubleshooting guide with PowerShell commands
 
-ðŸ’¡ Recommended Next Steps:
+💡 Recommended Next Steps:
 1. Follow Historical Ticket #TF-2024-001245 resolution steps
 2. Reference IT Glue SMTP Configuration Guide
 3. Use PowerShell commands from Common Issues doc`);
                       } else {
-                        setSearchResults(`ðŸ” Enterprise Knowledge Search Results for "${searchKeywords}":
+                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
 
-ðŸ“š Found 3 relevant articles:
+📚 Found 3 relevant articles:
 
-ðŸ’¡ Try searching for more specific terms like:
-â€¢ "Exchange" for email server issues
-â€¢ "VPN" for remote access problems  
-â€¢ "QuickBooks" for accounting software issues
-â€¢ "Password" for authentication problems`);
+💡 Try searching for more specific terms like:
+• "Exchange" for email server issues
+• "VPN" for remote access problems  
+• "QuickBooks" for accounting software issues
+• "Password" for authentication problems`);
                       }
                     }
                     setShowActionModal(false);
@@ -2416,8 +2314,14 @@ TechFlow MSP`);
     </div>
   );
 };
+
 export default ImprovedEngineerApp;
-
-
-
-
+                          type="checkbox"
+                          checked={searchHistoricalTickets}
+                          onChange={(e) => setSearchHistoricalTickets(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Historical Tickets
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input

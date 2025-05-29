@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "name": "ai-ticket-final",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  // ... (complete config in artifact)
+}
