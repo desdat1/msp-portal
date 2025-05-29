@@ -1,13 +1,14 @@
-// /pages/api/tickets.js
+﻿// pages/api/tickets.js
 
 let tickets = []; // In-memory storage (temporary)
 
 export default function handler(req, res) {
-  // Handle CORS
+  // Set CORS headers for all responses
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
+  // Handle preflight OPTIONS request from Make.com
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
@@ -19,7 +20,7 @@ export default function handler(req, res) {
     
     // Transform the data to match your React app format
     const newTicket = {
-      id: connectwiseResponse?.id || `AI-${Date.now()}`,
+      id: connectwiseResponse?.id || AI-,
       priority: determinePriority(originalTicket.subject),
       title: originalTicket.subject,
       company: 'AI Analysis',
@@ -51,7 +52,8 @@ export default function handler(req, res) {
     res.status(200).json({ tickets });
     
   } else {
-    res.status(405).json({ error: 'Method not allowed' });
+    res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
+    res.status(405).json({ error: Method  Not Allowed });
   }
 }
 
