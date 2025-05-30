@@ -19,14 +19,27 @@ import {
   Edit3,
   Timer,
   User,
+  RefreshCw,
+  Clipboard,
   Phone,
   Mail,
-  MessageCircle,
+  Building2,
   FileText,
-  Clipboard,
-  RefreshCw
+  CheckCircle,
+  Circle,
+  Zap,
+  Target,
+  Eye,
+  Share2,
+  Flag,
+  Wrench,
+  Monitor,
+  Database,
+  Building,
+  Tag
 } from 'lucide-react';
-import useTickets from '../hooks/useTickets'; // Import the live data hook
+import useTickets from '../hooks/useTickets';
+import { Ticket } from '../types/Ticket';
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
@@ -202,6 +215,29 @@ const styles: { [key: string]: React.CSSProperties } = {
     minWidth: '160px',
     outline: 'none'
   },
+  quickFilterChips: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '16px',
+    flexWrap: 'wrap'
+  },
+  quickFilterChip: {
+    padding: '6px 12px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '20px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  quickFilterChipActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
+  },
   ticketsList: {
     flex: 1,
     overflowY: 'auto',
@@ -213,16 +249,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     border: '1px solid #475569',
     borderRadius: '12px',
     overflow: 'hidden',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    cursor: 'pointer'
   },
   ticketCardSelected: {
     backgroundColor: '#1e40af',
     borderColor: '#3b82f6',
-    transform: 'scale(1.02)'
+    transform: 'scale(1.02)',
+    boxShadow: '0 8px 25px rgba(59, 130, 246, 0.15)'
+  },
+  ticketCardHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
   },
   ticketHeader: {
     padding: '18px',
-    cursor: 'pointer',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -236,26 +277,53 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '17px',
     fontWeight: '600',
     color: '#e2e8f0',
-    marginBottom: '10px'
+    marginBottom: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   ticketTitle: {
     fontSize: '17px',
     fontWeight: '500',
     color: '#e2e8f0',
     marginBottom: '10px',
-    lineHeight: '1.3'
+    lineHeight: '1.3',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical'
   },
   ticketCompany: {
     fontSize: '15px',
     color: '#94a3b8',
-    marginBottom: '12px'
+    marginBottom: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   ticketMeta: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: '15px',
-    color: '#94a3b8'
+    color: '#94a3b8',
+    flexWrap: 'wrap',
+    gap: '8px'
+  },
+  ticketTags: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    marginTop: '8px'
+  },
+  ticketTag: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    backgroundColor: '#475569',
+    color: '#e2e8f0'
   },
   priorityBadge: {
     padding: '6px 12px',
@@ -263,7 +331,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '13px',
     fontWeight: '600',
     textTransform: 'uppercase',
-    flexShrink: 0
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
   },
   priorityHigh: {
     backgroundColor: '#fee2e2',
@@ -277,13 +348,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#dcfce7',
     color: '#16a34a'
   },
+  priorityNeedsAttention: {
+    backgroundColor: '#fce7f3',
+    color: '#be185d'
+  },
   statusBadge: {
     padding: '4px 10px',
     borderRadius: '50px',
     fontSize: '12px',
     fontWeight: '600',
     textTransform: 'uppercase',
-    marginLeft: '8px'
+    marginLeft: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
   },
   statusNew: {
     backgroundColor: '#ddd6fe',
@@ -312,12 +390,47 @@ const styles: { [key: string]: React.CSSProperties } = {
   expandIcon: {
     color: '#94a3b8',
     marginLeft: '12px',
-    flexShrink: 0
+    flexShrink: 0,
+    transition: 'transform 0.2s'
   },
   ticketDetails: {
     padding: '0 18px 18px',
     borderTop: '1px solid #475569',
     backgroundColor: '#1e293b'
+  },
+  ticketDescription: {
+    fontSize: '15px',
+    color: '#cbd5e1',
+    lineHeight: '1.5',
+    marginBottom: '16px',
+    padding: '12px',
+    backgroundColor: '#334155',
+    borderRadius: '8px',
+    border: '1px solid #475569'
+  },
+  ticketMetaGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '12px',
+    marginBottom: '16px'
+  },
+  ticketMetaItem: {
+    padding: '8px 12px',
+    backgroundColor: '#334155',
+    borderRadius: '6px',
+    border: '1px solid #475569'
+  },
+  ticketMetaLabel: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  ticketMetaValue: {
+    fontSize: '14px',
+    color: '#e2e8f0',
+    fontWeight: '500'
   },
   quickActions: {
     display: 'flex',
@@ -333,7 +446,20 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '8px',
     fontSize: '14px',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  quickActionPrimary: {
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderColor: '#3b82f6'
+  },
+  quickActionDanger: {
+    backgroundColor: '#dc2626',
+    color: 'white',
+    borderColor: '#dc2626'
   },
   contentArea: {
     flex: 1,
@@ -357,7 +483,11 @@ const styles: { [key: string]: React.CSSProperties } = {
   ticketDetailsSubtitle: {
     fontSize: '20px',
     color: '#94a3b8',
-    marginBottom: '24px'
+    marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap'
   },
   ticketDetailsActions: {
     display: 'flex',
@@ -376,6 +506,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px'
+  },
+  actionButtonPrimary: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
+  },
+  actionButtonSecondary: {
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    color: '#e2e8f0'
+  },
+  actionButtonDanger: {
+    backgroundColor: '#dc2626',
+    borderColor: '#dc2626',
+    color: 'white'
+  },
+  actionButtonSuccess: {
+    backgroundColor: '#16a34a',
+    borderColor: '#16a34a',
+    color: 'white'
+  },
+  actionButtonWarning: {
+    backgroundColor: '#d97706',
+    borderColor: '#d97706',
+    color: 'white'
   },
   ticketContent: {
     flex: 1,
@@ -403,6 +558,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     cursor: 'pointer',
     transition: 'background 0.2s'
   },
+  sectionHeaderHover: {
+    backgroundColor: '#334155'
+  },
   sectionTitle: {
     fontSize: '22px',
     fontWeight: '600',
@@ -410,6 +568,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     gap: '16px'
+  },
+  sectionBadge: {
+    padding: '4px 8px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '600'
   },
   sectionContent: {
     padding: '24px'
@@ -419,7 +585,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#334155',
     border: '1px solid #475569',
     borderRadius: '12px',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    transition: 'all 0.2s'
+  },
+  noteItemHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c'
   },
   noteHeader: {
     display: 'flex',
@@ -430,7 +601,10 @@ const styles: { [key: string]: React.CSSProperties } = {
   noteAuthor: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#e2e8f0'
+    color: '#e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   noteTime: {
     fontSize: '16px',
@@ -440,6 +614,34 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '18px',
     color: '#cbd5e1',
     lineHeight: '1.6'
+  },
+  noteType: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    textTransform: 'uppercase'
+  },
+  noteTypePublic: {
+    backgroundColor: '#dcfce7',
+    color: '#16a34a'
+  },
+  noteTypeInternal: {
+    backgroundColor: '#fef3c7',
+    color: '#d97706'
+  },
+  addNoteSection: {
+    padding: '24px',
+    backgroundColor: '#334155',
+    border: '2px dashed #475569',
+    borderRadius: '12px',
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  addNoteSectionHover: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#3f4a5a'
   },
   aiActions: {
     display: 'grid',
@@ -461,7 +663,18 @@ const styles: { [key: string]: React.CSSProperties } = {
     minHeight: '70px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    gap: '8px'
+  },
+  aiButtonHover: {
+    backgroundColor: '#334155',
+    borderColor: '#3b82f6',
+    transform: 'translateY(-2px)'
+  },
+  aiButtonActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
   },
   analysisResults: {
     backgroundColor: '#1e293b',
@@ -470,12 +683,21 @@ const styles: { [key: string]: React.CSSProperties } = {
     minHeight: '160px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    border: '1px solid #334155'
   },
   analysisPlaceholder: {
     color: '#94a3b8',
     fontSize: '18px',
     textAlign: 'center'
+  },
+  analysisContent: {
+    whiteSpace: 'pre-line',
+    textAlign: 'left',
+    width: '100%',
+    fontSize: '18px',
+    lineHeight: '1.6',
+    color: '#e2e8f0'
   },
   rightSidebar: {
     width: '400px',
@@ -491,7 +713,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: '22px',
     fontWeight: '600',
     color: '#e2e8f0',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
   },
   contactField: {
     marginBottom: '20px'
@@ -499,12 +724,25 @@ const styles: { [key: string]: React.CSSProperties } = {
   contactLabel: {
     fontSize: '16px',
     color: '#94a3b8',
-    marginBottom: '8px'
+    marginBottom: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   contactValue: {
     fontSize: '20px',
     color: '#e2e8f0',
-    fontWeight: '500'
+    fontWeight: '500',
+    padding: '12px',
+    backgroundColor: '#334155',
+    borderRadius: '8px',
+    border: '1px solid #475569',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  contactValueHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c'
   },
   managementButton: {
     width: '100%',
@@ -524,6 +762,11 @@ const styles: { [key: string]: React.CSSProperties } = {
     gap: '16px',
     minHeight: '64px'
   },
+  managementButtonHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c',
+    transform: 'translateY(-2px)'
+  },
   timeTracking: {
     backgroundColor: '#334155',
     borderRadius: '16px',
@@ -536,7 +779,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: '700',
     color: '#3b82f6',
     textAlign: 'center',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    fontFamily: 'monospace'
   },
   timeButtons: {
     display: 'flex',
@@ -557,6 +801,41 @@ const styles: { [key: string]: React.CSSProperties } = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px'
+  },
+  timeButtonActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
+  },
+  timeButtonDanger: {
+    backgroundColor: '#dc2626',
+    borderColor: '#dc2626',
+    color: 'white'
+  },
+  timeStats: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    marginTop: '16px'
+  },
+  timeStat: {
+    padding: '12px',
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    border: '1px solid #334155',
+    textAlign: 'center'
+  },
+  timeStatLabel: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  timeStatValue: {
+    fontSize: '18px',
+    color: '#e2e8f0',
+    fontWeight: '600'
   },
   modalOverlay: {
     position: 'fixed',
@@ -580,7 +859,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxHeight: '85vh',
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)'
   },
   modalHeader: {
     padding: '32px',
@@ -604,9 +884,14 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '12px',
     transition: 'all 0.2s'
   },
+  modalCloseHover: {
+    backgroundColor: '#334155',
+    color: '#e2e8f0'
+  },
   modalContent: {
     padding: '32px',
-    overflowY: 'auto'
+    overflowY: 'auto',
+    flex: 1
   },
   modalGrid: {
     display: 'grid',
@@ -629,6 +914,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     textAlign: 'left',
     minHeight: '80px'
   },
+  modalButtonHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c',
+    transform: 'translateY(-2px)'
+  },
+  modalButtonDescription: {
+    fontSize: '16px',
+    color: '#94a3b8',
+    marginTop: '8px'
+  },
   formField: {
     marginBottom: '24px'
   },
@@ -647,7 +942,12 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '12px',
     color: '#e2e8f0',
     fontSize: '18px',
-    outline: 'none'
+    outline: 'none',
+    transition: 'all 0.2s'
+  },
+  formInputFocus: {
+    borderColor: '#3b82f6',
+    boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
   },
   formTextarea: {
     width: '100%',
@@ -658,7 +958,10 @@ const styles: { [key: string]: React.CSSProperties } = {
     color: '#e2e8f0',
     fontSize: '18px',
     resize: 'vertical',
-    outline: 'none'
+    outline: 'none',
+    minHeight: '120px',
+    lineHeight: '1.5',
+    transition: 'all 0.2s'
   },
   formSelect: {
     width: '100%',
@@ -668,7 +971,9 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '12px',
     color: '#e2e8f0',
     fontSize: '18px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    outline: 'none',
+    transition: 'all 0.2s'
   },
   checkboxGroup: {
     display: 'flex',
@@ -679,12 +984,37 @@ const styles: { [key: string]: React.CSSProperties } = {
     display: 'flex',
     alignItems: 'center',
     color: '#cbd5e1',
-    fontSize: '16px'
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'color 0.2s'
+  },
+  checkboxLabelHover: {
+    color: '#e2e8f0'
   },
   checkbox: {
     marginRight: '12px',
     width: '20px',
-    height: '20px'
+    height: '20px',
+    cursor: 'pointer'
+  },
+  radioGroup: {
+    display: 'flex',
+    gap: '20px',
+    flexWrap: 'wrap'
+  },
+  radioLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    color: '#cbd5e1',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'color 0.2s'
+  },
+  radio: {
+    marginRight: '12px',
+    width: '20px',
+    height: '20px',
+    cursor: 'pointer'
   },
   fileDropZone: {
     border: '2px dashed #475569',
@@ -694,6 +1024,15 @@ const styles: { [key: string]: React.CSSProperties } = {
     backgroundColor: '#334155',
     transition: 'all 0.2s',
     cursor: 'pointer'
+  },
+  fileDropZoneActive: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#1e40af',
+    transform: 'scale(1.02)'
+  },
+  fileDropZoneHover: {
+    borderColor: '#94a3b8',
+    backgroundColor: '#3f4a5a'
   },
   fileList: {
     marginTop: '16px'
@@ -705,7 +1044,16 @@ const styles: { [key: string]: React.CSSProperties } = {
     padding: '12px 16px',
     backgroundColor: '#1e293b',
     borderRadius: '8px',
-    marginBottom: '8px'
+    marginBottom: '8px',
+    border: '1px solid #334155'
+  },
+  fileName: {
+    color: '#cbd5e1',
+    fontSize: '16px'
+  },
+  fileSize: {
+    color: '#94a3b8',
+    fontSize: '14px'
   },
   removeButton: {
     background: '#dc2626',
@@ -714,7 +1062,106 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '6px',
     padding: '6px 12px',
     cursor: 'pointer',
-    fontSize: '14px'
+    fontSize: '14px',
+    transition: 'all 0.2s'
+  },
+  removeButtonHover: {
+    backgroundColor: '#b91c1c'
+  },
+  timerStoppedInfo: {
+    textAlign: 'center',
+    marginBottom: '32px',
+    padding: '24px',
+    backgroundColor: '#334155',
+    borderRadius: '12px',
+    border: '1px solid #475569'
+  },
+  timerStoppedTime: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#3b82f6',
+    marginBottom: '8px',
+    fontFamily: 'monospace'
+  },
+  timerStoppedSubtext: {
+    fontSize: '16px',
+    color: '#94a3b8'
+  },
+  modalActions: {
+    marginTop: '32px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '16px',
+    paddingTop: '24px',
+    borderTop: '1px solid #334155'
+  },
+  buttonCancel: {
+    padding: '16px 24px',
+    backgroundColor: '#334155',
+    color: '#e2e8f0',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonPrimary: {
+    padding: '16px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonDanger: {
+    padding: '16px 24px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonSuccess: {
+    padding: '16px 24px',
+    backgroundColor: '#16a34a',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px 40px',
+    textAlign: 'center',
+    color: '#94a3b8'
+  },
+  emptyStateIcon: {
+    marginBottom: '20px',
+    color: '#475569'
+  },
+  emptyStateTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    marginBottom: '12px'
+  },
+  emptyStateDescription: {
+    fontSize: '18px',
+    lineHeight: '1.6',
+    maxWidth: '400px'
   }
 };
 
@@ -724,10 +1171,9 @@ const priorities = ['All Priorities', 'HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'
 const employees = ['David Kim (Manager)', 'Marcus Thompson (L3)', 'Lisa Wang (Senior)', 'Frank Chen (L2)', 'Tom Rodriguez (L1)', 'Sarah Chen (L2)', 'Mike Johnson (L2)', 'Alex Rodriguez (L1)', 'Jenny Williams (L2)'];
 
 const ImprovedEngineerApp = () => {
-  // Replace static tickets with live data hook
   const { tickets, loading, error, lastUpdated, refreshTickets } = useTickets();
   
-  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [activeFilter, setActiveFilter] = useState('My Open');
   const [selectedEngineer, setSelectedEngineer] = useState('All Engineers');
   const [selectedClient, setSelectedClient] = useState('');
@@ -738,10 +1184,20 @@ const ImprovedEngineerApp = () => {
   const [showNotes, setShowNotes] = useState(false);
   const [showTakeActionModal, setShowTakeActionModal] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState(8142); // 02:15:42
   const [aiAnalysisResult, setAiAnalysisResult] = useState('');
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionModalType, setActionModalType] = useState('');
   const [ticketSummaryContent, setTicketSummaryContent] = useState('');
+  const [activeAiButton, setActiveAiButton] = useState('');
+  
+  // Quick filter states
+  const [quickFilters, setQuickFilters] = useState({
+    highPriority: false,
+    myTickets: false,
+    newTickets: false,
+    overdue: false
+  });
   
   // Form states
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -778,6 +1234,25 @@ const ImprovedEngineerApp = () => {
   const [shareViaTeams, setShareViaTeams] = useState(false);
   const [shareViaSMS, setShareViaSMS] = useState(false);
 
+  // Timer effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
+
+  // Format timer display
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Set initial selected ticket when tickets load
   React.useEffect(() => {
     if (tickets.length > 0 && !selectedTicket) {
@@ -787,6 +1262,7 @@ const ImprovedEngineerApp = () => {
 
   // Enhanced filtering with live data
   const filteredTickets = tickets.filter(ticket => {
+    // Search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!ticket.assignee.toLowerCase().includes(query) &&
@@ -796,6 +1272,26 @@ const ImprovedEngineerApp = () => {
         return false;
       }
     }
+    
+    // Quick filters
+    if (quickFilters.highPriority && ticket.priority !== 'HIGH' && ticket.priority !== 'NEEDS_ATTENTION') {
+      return false;
+    }
+    if (quickFilters.myTickets && ticket.assignee !== 'Sarah Chen') {
+      return false;
+    }
+    if (quickFilters.newTickets && ticket.status !== 'New') {
+      return false;
+    }
+    if (quickFilters.overdue) {
+      // Simple overdue logic - tickets older than 2 days
+      const ticketHours = parseInt(ticket.time);
+      if (isNaN(ticketHours) || ticketHours < 48) {
+        return false;
+      }
+    }
+    
+    // Standard filters
     if (selectedEngineer !== 'All Engineers' && ticket.assignee !== selectedEngineer) {
       return false;
     }
@@ -808,6 +1304,7 @@ const ImprovedEngineerApp = () => {
     if (selectedPriority !== 'All Priorities' && ticket.priority !== selectedPriority) {
       return false;
     }
+    
     return true;
   });
 
@@ -821,22 +1318,39 @@ const ImprovedEngineerApp = () => {
     setExpandedTickets(newExpanded);
   };
 
+  const toggleQuickFilter = (filter: keyof typeof quickFilters) => {
+    setQuickFilters(prev => ({
+      ...prev,
+      [filter]: !prev[filter]
+    }));
+  };
+
   const getPriorityStyle = (priority: string) => {
     switch(priority) {
       case 'HIGH': return styles.priorityHigh;
       case 'MEDIUM': return styles.priorityMedium;
       case 'LOW': return styles.priorityLow;
-      case 'NEEDS_ATTENTION': return styles.priorityHigh;
+      case 'NEEDS_ATTENTION': return styles.priorityNeedsAttention;
       default: return styles.priorityMedium;
     }
   };
 
-  const getPriorityText = (priority: string) => {
+  const getPriorityIcon = (priority: string) => {
+    switch(priority) {
+      case 'HIGH': return <AlertTriangle size={16} />;
+      case 'NEEDS_ATTENTION': return <Flag size={16} />;
+      case 'MEDIUM': return <Circle size={16} />;
+      case 'LOW': return <Minus size={16} />;
+      default: return <Circle size={16} />;
+    }
+  };
+
+  const getPriorityText = (priority: Ticket['priority']) => {
     if (priority === 'NEEDS_ATTENTION') return 'Needs Attention';
     return priority;
   };
 
-  const getStatusStyle = (status: string) => {
+  const getStatusStyle = (status: Ticket['status']) => {
     switch(status) {
       case 'New': return styles.statusNew;
       case 'Assigned': return styles.statusAssigned;
@@ -845,6 +1359,18 @@ const ImprovedEngineerApp = () => {
       case 'Escalated': return styles.statusEscalated;
       case 'Resolved': return styles.statusResolved;
       default: return styles.statusNew;
+    }
+  };
+
+  const getStatusIcon = (status: Ticket['status']) => {
+    switch(status) {
+      case 'New': return <Circle size={12} />;
+      case 'Assigned': return <User size={12} />;
+      case 'In Progress': return <Play size={12} />;
+      case 'Waiting': return <Clock size={12} />;
+      case 'Escalated': return <AlertTriangle size={12} />;
+      case 'Resolved': return <CheckCircle size={12} />;
+      default: return <Circle size={12} />;
     }
   };
 
@@ -870,19 +1396,21 @@ const ImprovedEngineerApp = () => {
     return timeString;
   };
 
-  const handleTicketSelect = (ticket: any) => {
+  const handleTicketSelect = (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setExpandedTickets(new Set());
     setShowNotes(false);
     setAiAnalysisResult('');
     setTicketSummaryContent('');
     setSearchResults('');
+    setActiveAiButton('');
   };
 
-  // Enhanced AI actions with live ticket data
   const handleAiAction = (action: string) => {
     if (!selectedTicket) return;
 
+    setActiveAiButton(action);
+    
     switch(action) {
       case 'environment':
         setAiAnalysisResult(`🏢 Client Environment - ${selectedTicket.company}:
@@ -1028,6 +1556,8 @@ TechFlow MSP`);
       case 'Change Status':
         setActionModalType('Change Status');
         setTimerStatusChange(selectedTicket?.status || '');
+        setTimerNotes('');
+        setNoteType('public');
         setShowActionModal(true);
         break;
       case 'Stop Timer':
@@ -1146,16 +1676,17 @@ TechFlow MSP`);
 
   return (
     <div style={styles.container}>
-      {/* Error Banner */}
       {error && (
         <div style={styles.errorBanner}>
           ⚠️ Connection Error: {error} - Showing cached data
         </div>
       )}
 
-      {/* Header */}
       <div style={styles.header}>
-        <div style={styles.logo}>TechFlow MSP - Engineer Portal</div>
+        <div style={styles.logo}>
+          <Building2 style={{ marginRight: '12px', display: 'inline' }} />
+          TechFlow MSP - Engineer Portal
+        </div>
         
         <div style={styles.searchContainer}>
           <Search size={24} style={styles.searchIcon} />
@@ -1181,18 +1712,22 @@ TechFlow MSP`);
               </span>
             )}
           </button>
-          <span>Sarah Chen • L2 Support Engineer</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={20} />
+            <span>Sarah Chen • L2 Support Engineer</span>
+          </div>
           <Settings size={24} style={{cursor: 'pointer'}} />
         </div>
       </div>
 
       <div style={styles.mainContent}>
-        {/* Left Sidebar - Live Tickets List */}
         <div style={styles.ticketsSidebar}>
           <div style={styles.sidebarHeader}>
             <div>
               <div style={styles.sidebarTitle}>
-                ConnectWise Tickets {loading && <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+                <MessageSquare style={{ marginRight: '12px', display: 'inline' }} />
+                ConnectWise Tickets 
+                {loading && <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', marginLeft: '8px' }} />}
               </div>
               <div style={styles.sidebarStats}>
                 Showing: {filteredTickets.length} • Total: {tickets.length} • Live Data ✅
@@ -1209,7 +1744,61 @@ TechFlow MSP`);
                 }}
                 onClick={() => setActiveFilter('My Open')}
               >
+                <User size={16} style={{ marginRight: '6px' }} />
                 My Open
+              </div>
+              <div 
+                style={{
+                  ...styles.filterTab,
+                  ...(activeFilter === 'All Open' ? styles.filterTabActive : styles.filterTabInactive)
+                }}
+                onClick={() => setActiveFilter('All Open')}
+              >
+                <Users size={16} style={{ marginRight: '6px' }} />
+                All Open
+              </div>
+            </div>
+
+            <div style={styles.quickFilterChips}>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.highPriority ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('highPriority')}
+              >
+                <AlertTriangle size={14} />
+                High Priority
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.myTickets ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('myTickets')}
+              >
+                <User size={14} />
+                My Tickets
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.newTickets ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('newTickets')}
+              >
+                <Circle size={14} />
+                New
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.overdue ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('overdue')}
+              >
+                <Clock size={14} />
+                Overdue
               </div>
             </div>
             
@@ -1259,8 +1848,14 @@ TechFlow MSP`);
           
           <div style={styles.ticketsList}>
             {filteredTickets.length === 0 ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-                {loading ? 'Loading tickets...' : 'No tickets match your filters'}
+              <div style={styles.emptyState}>
+                <MessageSquare size={64} style={styles.emptyStateIcon} />
+                <div style={styles.emptyStateTitle}>
+                  {loading ? 'Loading tickets...' : 'No tickets match your filters'}
+                </div>
+                <div style={styles.emptyStateDescription}>
+                  {loading ? 'Connecting to ConnectWise...' : 'Try adjusting your filters or search terms to see more tickets.'}
+                </div>
               </div>
             ) : (
               filteredTickets.map(ticket => (
@@ -1270,53 +1865,143 @@ TechFlow MSP`);
                     ...styles.ticketCard,
                     ...(selectedTicket?.id === ticket.id ? styles.ticketCardSelected : {})
                   }}
+                  onClick={() => handleTicketSelect(ticket)}
                 >
-                  <div 
-                    style={styles.ticketHeader}
-                    onClick={() => handleTicketSelect(ticket)}
-                  >
+                  <div style={styles.ticketHeader}>
                     <div style={styles.ticketHeaderLeft}>
-                      <div style={styles.ticketNumber}>#{ticket.id} ({ticket.assignee})</div>
+                      <div style={styles.ticketNumber}>
+                        <FileText size={16} />
+                        #{ticket.id} ({ticket.assignee})
+                      </div>
                       <div style={styles.ticketTitle}>{ticket.title}</div>
                       <div style={styles.ticketCompany}>
+                        <Building size={14} />
                         <strong>{ticket.company}</strong> - {formatTimeAgo(ticket.time)}
                       </div>
                       <div style={styles.ticketMeta}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <span style={{
                             ...styles.priorityBadge,
                             ...getPriorityStyle(ticket.priority)
                           }}>
+                            {getPriorityIcon(ticket.priority)}
                             {getPriorityText(ticket.priority)}
                           </span>
                           <span style={{
                             ...styles.statusBadge,
                             ...getStatusStyle(ticket.status)
                           }}>
+                            {getStatusIcon(ticket.status)}
                             {ticket.status}
                           </span>
                         </div>
                       </div>
+                      {(ticket.severity || ticket.type) && (
+                        <div style={styles.ticketTags}>
+                          {ticket.severity && (
+                            <span style={styles.ticketTag}>
+                              <Target size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                              {ticket.severity}
+                            </span>
+                          )}
+                          {ticket.type && (
+                            <span style={styles.ticketTag}>
+                              <Tag size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                              {ticket.type}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                       <div 
-                        style={styles.expandIcon}
+                        style={{
+                          ...styles.expandIcon,
+                          transform: isTicketExpanded(ticket.id) ? 'rotate(180deg)' : 'rotate(0deg)'
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleTicketExpansion(ticket.id);
                         }}
                       >
-                        {isTicketExpanded(ticket.id) ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        <ChevronDown size={20} />
                       </div>
                     </div>
                   </div>
                   
                   {isTicketExpanded(ticket.id) && (
                     <div style={styles.ticketDetails}>
+                      {ticket.description && (
+                        <div style={styles.ticketDescription}>
+                          <strong>Description:</strong><br />
+                          {ticket.description}
+                        </div>
+                      )}
+                      
+                      <div style={styles.ticketMetaGrid}>
+                        {ticket.board && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Board</div>
+                            <div style={styles.ticketMetaValue}>{ticket.board}</div>
+                          </div>
+                        )}
+                        {ticket.type && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Type</div>
+                            <div style={styles.ticketMetaValue}>{ticket.type}</div>
+                          </div>
+                        )}
+                        {ticket.severity && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Severity</div>
+                            <div style={styles.ticketMetaValue}>{ticket.severity}</div>
+                          </div>
+                        )}
+                        {ticket.impact && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Impact</div>
+                            <div style={styles.ticketMetaValue}>{ticket.impact}</div>
+                          </div>
+                        )}
+                        {ticket.urgency && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Urgency</div>
+                            <div style={styles.ticketMetaValue}>{ticket.urgency}</div>
+                          </div>
+                        )}
+                      </div>
+                      
                       <div style={styles.quickActions}>
-                        <button style={styles.quickAction}>View Details</button>
-                        <button style={styles.quickAction}>Take Ownership</button>
-                        <button style={styles.quickAction}>Escalate</button>
+                        <button 
+                          style={{...styles.quickAction, ...styles.quickActionPrimary}}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTicketSelect(ticket);
+                          }}
+                        >
+                          <Eye size={16} />
+                          View Details
+                        </button>
+                        <button 
+                          style={styles.quickAction}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAction('assign');
+                          }}
+                        >
+                          <User size={16} />
+                          Take Ownership
+                        </button>
+                        <button 
+                          style={{...styles.quickAction, ...styles.quickActionDanger}}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAction('escalate');
+                          }}
+                        >
+                          <AlertTriangle size={16} />
+                          Escalate
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1326,39 +2011,60 @@ TechFlow MSP`);
           </div>
         </div>
 
-        {/* Main Content Area - Show selected ticket or placeholder */}
         {selectedTicket ? (
           <div style={styles.contentArea}>
-            {/* Ticket Header */}
             <div style={styles.ticketDetailsHeader}>
               <div style={styles.ticketDetailsTitle}>
                 {selectedTicket.title}
               </div>
               <div style={styles.ticketDetailsSubtitle}>
-                #{selectedTicket.id} ({selectedTicket.assignee}) • {selectedTicket.company}
+                <FileText size={20} />
+                #{selectedTicket.id} ({selectedTicket.assignee})
+                <Building size={20} />
+                {selectedTicket.company}
+                <Clock size={20} />
+                {formatTimeAgo(selectedTicket.time)}
               </div>
               <div style={styles.ticketDetailsActions}>
                 <button 
-                  style={{...styles.actionButton, backgroundColor: '#3b82f6', borderColor: '#3b82f6', color: 'white'}}
+                  style={{...styles.actionButton, ...styles.actionButtonPrimary}}
                   onClick={() => setShowTakeActionModal(true)}
                 >
                   <MessageSquare size={24} />
                   Take Action
                 </button>
                 <button 
-                  style={{...styles.actionButton, backgroundColor: '#dc2626', borderColor: '#dc2626', color: 'white'}}
+                  style={{...styles.actionButton, ...styles.actionButtonSecondary}}
+                  onClick={() => handleQuickAction('assign')}
+                >
+                  <Users size={24} />
+                  Assign/Add Teammate
+                </button>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonDanger}}
                   onClick={() => handleQuickAction('escalate')}
                 >
                   <AlertTriangle size={24} />
                   Request Escalation
                 </button>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonSuccess}}
+                  onClick={() => {
+                    setActionModalType('Change Status');
+                    setTimerStatusChange('Resolved');
+                    setTimerNotes('');
+                    setNoteType('public');
+                    setShowActionModal(true);
+                  }}
+                >
+                  <CheckCircle size={24} />
+                  Mark Resolved
+                </button>
               </div>
             </div>
 
-            {/* Ticket Content */}
             <div style={styles.ticketContent}>
               <div style={styles.mainTicketArea}>
-                {/* Notes Section */}
                 <div style={styles.sectionCard}>
                   <div 
                     style={styles.sectionHeader}
@@ -1367,6 +2073,7 @@ TechFlow MSP`);
                     <div style={styles.sectionTitle}>
                       <MessageSquare size={24} color="#3b82f6" />
                       ConnectWise Ticket Notes
+                      <span style={styles.sectionBadge}>3</span>
                     </div>
                     {showNotes ? <Minus size={24} /> : <Plus size={24} />}
                   </div>
@@ -1375,8 +2082,15 @@ TechFlow MSP`);
                     <div style={styles.sectionContent}>
                       <div style={styles.noteItem}>
                         <div style={styles.noteHeader}>
-                          <div style={styles.noteAuthor}>ConnectWise System</div>
-                          <div style={styles.noteTime}>{selectedTicket.time}</div>
+                          <div style={styles.noteAuthor}>
+                            <User size={16} />
+                            ConnectWise System
+                            <span style={{...styles.noteType, ...styles.noteTypePublic}}>Public</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            {selectedTicket.time}
+                          </div>
                         </div>
                         <div style={styles.noteContent}>
                           {selectedTicket.description || 'Initial ticket description from ConnectWise system.'}
@@ -1385,19 +2099,58 @@ TechFlow MSP`);
                       
                       <div style={styles.noteItem}>
                         <div style={styles.noteHeader}>
-                          <div style={styles.noteAuthor}>AI Assistant</div>
-                          <div style={styles.noteTime}>Live Analysis</div>
+                          <div style={styles.noteAuthor}>
+                            <Brain size={16} />
+                            AI Assistant
+                            <span style={{...styles.noteType, ...styles.noteTypeInternal}}>Internal</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            Live Analysis
+                          </div>
                         </div>
                         <div style={styles.noteContent}>
                           Ticket automatically imported from ConnectWise. Priority: {getPriorityText(selectedTicket.priority)}, 
                           Status: {selectedTicket.status}. Ready for AI-assisted resolution.
                         </div>
                       </div>
+
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>
+                            <User size={16} />
+                            Sarah Chen
+                            <span style={{...styles.noteType, ...styles.noteTypePublic}}>Public</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            5 min ago
+                          </div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          I've reviewed the ticket and am beginning investigation. Will provide an update within 30 minutes.
+                        </div>
+                      </div>
+
+                      <div 
+                        style={styles.addNoteSection}
+                        onClick={() => {
+                          setActionModalType('Add Note');
+                          setTimerNotes('');
+                          setNoteType('public');
+                          setShowActionModal(true);
+                        }}
+                      >
+                        <Plus size={24} style={{ marginBottom: '8px', color: '#3b82f6' }} />
+                        <div style={{ fontSize: '16px', fontWeight: '500' }}>Add New Note</div>
+                        <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+                          Click to add a note to this ticket
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* AI Assistant Section */}
                 <div style={styles.sectionCard}>
                   <div style={styles.sectionHeader}>
                     <div style={styles.sectionTitle}>
@@ -1409,47 +2162,64 @@ TechFlow MSP`);
                   <div style={styles.sectionContent}>
                     <div style={styles.aiActions}>
                       <button 
-                        style={styles.aiButton}
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'environment' ? styles.aiButtonActive : {})
+                        }}
                         onClick={() => handleAiAction('environment')}
                       >
+                        <Monitor size={20} />
                         🔍 Live Client Environment
                       </button>
                       <button 
-                        style={styles.aiButton}
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'knowledge' ? styles.aiButtonActive : {})
+                        }}
                         onClick={() => handleAiAction('knowledge')}
                       >
+                        <Database size={20} />
                         📈 Enterprise Knowledge Search
                       </button>
                       <button 
-                        style={styles.aiButton}
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'actions' ? styles.aiButtonActive : {})
+                        }}
                         onClick={() => handleAiAction('actions')}
                       >
+                        <Zap size={20} />
                         ⚡ Generate AI Actions
                       </button>
                       <button 
-                        style={styles.aiButton}
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'summary' ? styles.aiButtonActive : {})
+                        }}
                         onClick={() => handleAiAction('summary')}
                       >
+                        <FileText size={20} />
                         📋 ConnectWise Summary
                       </button>
                     </div>
                     
                     <div style={styles.analysisResults}>
                       {ticketSummaryContent ? (
-                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                        <div style={styles.analysisContent}>
                           {ticketSummaryContent}
                         </div>
                       ) : aiAnalysisResult ? (
-                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                        <div style={styles.analysisContent}>
                           {aiAnalysisResult}
                         </div>
                       ) : searchResults ? (
-                        <div style={{ whiteSpace: 'pre-line', textAlign: 'left', width: '100%', fontSize: '18px', lineHeight: '1.6' }}>
+                        <div style={styles.analysisContent}>
                           {searchResults}
                         </div>
                       ) : (
                         <div style={styles.analysisPlaceholder}>
-                          Click any AI Assistant button above to analyze this ConnectWise ticket.
+                          <Brain size={48} style={{ marginBottom: '16px', color: '#475569' }} />
+                          <div>Click any AI Assistant button above to analyze this ConnectWise ticket.</div>
                         </div>
                       )}
                     </div>
@@ -1460,100 +2230,178 @@ TechFlow MSP`);
           </div>
         ) : (
           <div style={styles.contentArea}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-              <div style={{ textAlign: 'center', color: '#94a3b8' }}>
-                <MessageSquare size={64} style={{ marginBottom: '20px' }} />
-                <h2>Select a ConnectWise Ticket</h2>
-                <p>Choose a ticket from the sidebar to view details and AI analysis</p>
+            <div style={styles.emptyState}>
+              <MessageSquare size={64} style={styles.emptyStateIcon} />
+              <div style={styles.emptyStateTitle}>Select a ConnectWise Ticket</div>
+              <div style={styles.emptyStateDescription}>
+                Choose a ticket from the sidebar to view details and AI analysis
               </div>
             </div>
           </div>
         )}
 
-        {/* Right Sidebar */}
         {selectedTicket && (
           <div style={styles.rightSidebar}>
-            {/* Contact Info */}
             <div style={styles.sidebarSection}>
-              <div style={styles.sidebarSectionTitle}>ConnectWise Contact Info</div>
+              <div style={styles.sidebarSectionTitle}>
+                <Phone size={20} />
+                ConnectWise Contact Info
+              </div>
               
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Requestor</div>
+                <div style={styles.contactLabel}>
+                  <User size={16} />
+                  Requestor
+                </div>
                 <div style={styles.contactValue}>{selectedTicket.contact.name}</div>
               </div>
               
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Company</div>
+                <div style={styles.contactLabel}>
+                  <Building size={16} />
+                  Company
+                </div>
                 <div style={styles.contactValue}>{selectedTicket.company}</div>
               </div>
               
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Phone</div>
-                <div style={styles.contactValue}>{selectedTicket.contact.phone}</div>
+                <div style={styles.contactLabel}>
+                  <Phone size={16} />
+                  Phone
+                </div>
+                <div 
+                  style={styles.contactValue}
+                  onClick={() => window.open(`tel:${selectedTicket.contact.phone}`)}
+                >
+                  {selectedTicket.contact.phone}
+                </div>
               </div>
               
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Email</div>
-                <div style={styles.contactValue}>{selectedTicket.contact.email}</div>
+                <div style={styles.contactLabel}>
+                  <Mail size={16} />
+                  Email
+                </div>
+                <div 
+                  style={styles.contactValue}
+                  onClick={() => window.open(`mailto:${selectedTicket.contact.email}`)}
+                >
+                  {selectedTicket.contact.email}
+                </div>
               </div>
 
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Ticket Board</div>
+                <div style={styles.contactLabel}>
+                  <FileText size={16} />
+                  Ticket Board
+                </div>
                 <div style={styles.contactValue}>{selectedTicket.board || 'Service Board'}</div>
               </div>
 
               <div style={styles.contactField}>
-                <div style={styles.contactLabel}>Type</div>
+                <div style={styles.contactLabel}>
+                  <Tag size={16} />
+                  Type
+                </div>
                 <div style={styles.contactValue}>{selectedTicket.type || 'Service Request'}</div>
               </div>
             </div>
 
-            {/* Time Tracking */}
             <div style={styles.sidebarSection}>
-              <div style={styles.sidebarSectionTitle}>Time Tracking</div>
+              <div style={styles.sidebarSectionTitle}>
+                <Timer size={20} />
+                Time Tracking
+              </div>
               
               <div style={styles.timeTracking}>
-                <div style={styles.timeDisplay}>02:15:42</div>
+                <div style={styles.timeDisplay}>{formatTime(timerSeconds)}</div>
                 <div style={styles.timeButtons}>
                   <button 
-                    style={styles.timeButton}
+                    style={{
+                      ...styles.timeButton,
+                      ...(isTimerRunning ? styles.timeButtonActive : {})
+                    }}
                     onClick={() => setIsTimerRunning(!isTimerRunning)}
                   >
                     {isTimerRunning ? <Pause size={18} /> : <Play size={18} />}
                     {isTimerRunning ? 'Pause' : 'Start'}
                   </button>
-                  <button style={styles.timeButton}>
+                  <button 
+                    style={{...styles.timeButton, ...styles.timeButtonDanger}}
+                    onClick={() => handleTakeAction('Stop Timer')}
+                  >
                     <Timer size={18} />
-                    Log Time
+                    Stop & Log
                   </button>
+                </div>
+                
+                <div style={styles.timeStats}>
+                  <div style={styles.timeStat}>
+                    <div style={styles.timeStatLabel}>Today</div>
+                    <div style={styles.timeStatValue}>6h 42m</div>
+                  </div>
+                  <div style={styles.timeStat}>
+                    <div style={styles.timeStatLabel}>This Week</div>
+                    <div style={styles.timeStatValue}>34h 18m</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div style={styles.sidebarSection}>
-              <div style={styles.sidebarSectionTitle}>Quick Actions</div>
+              <div style={styles.sidebarSectionTitle}>
+                <Wrench size={20} />
+                Quick Actions
+              </div>
               
               <button 
                 style={styles.managementButton}
                 onClick={() => handleQuickAction('assign')}
               >
                 <Users size={24} />
-                Assign/Add Teammate
+                <div>
+                  <div style={{ fontWeight: '600' }}>Assign/Add Teammate</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Collaborate on this ticket</div>
+                </div>
               </button>
+              
               <button 
                 style={styles.managementButton}
                 onClick={() => handleQuickAction('watchers')}
               >
-                <User size={24} />
-                Add Watchers
+                <Eye size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Add Watchers</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Get notifications on updates</div>
+                </div>
+              </button>
+
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleTakeAction('Manual Time Entry')}
+              >
+                <Clock size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Manual Time Entry</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Log time worked offline</div>
+                </div>
+              </button>
+
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleTakeAction('Share Update')}
+              >
+                <Share2 size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Share Update</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Notify team of progress</div>
+                </div>
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Take Action Modal */}
       {showTakeActionModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContainer}>
@@ -1576,7 +2424,7 @@ TechFlow MSP`);
                   <Edit3 size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>AI Draft Response</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Generate smart reply</div>
+                    <div style={styles.modalButtonDescription}>Generate smart reply using AI</div>
                   </div>
                 </button>
                 
@@ -1587,7 +2435,7 @@ TechFlow MSP`);
                   <Paperclip size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>Attach Files</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Upload screenshots/docs</div>
+                    <div style={styles.modalButtonDescription}>Upload screenshots and documents</div>
                   </div>
                 </button>
                 
@@ -1598,7 +2446,7 @@ TechFlow MSP`);
                   <AlertTriangle size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>Change Status</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Update ticket status</div>
+                    <div style={styles.modalButtonDescription}>Update ticket status and add notes</div>
                   </div>
                 </button>
                 
@@ -1609,7 +2457,7 @@ TechFlow MSP`);
                   <Clock size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>Stop Timer</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Pause time tracking</div>
+                    <div style={styles.modalButtonDescription}>Stop time tracking and add work notes</div>
                   </div>
                 </button>
                 
@@ -1620,7 +2468,7 @@ TechFlow MSP`);
                   <Timer size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>Manual Time Entry</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Log time manually</div>
+                    <div style={styles.modalButtonDescription}>Log time worked manually</div>
                   </div>
                 </button>
                 
@@ -1631,7 +2479,7 @@ TechFlow MSP`);
                   <Send size={24} />
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '8px' }}>Share Update</div>
-                    <div style={{ fontSize: '16px', color: '#94a3b8' }}>Send colleague update</div>
+                    <div style={styles.modalButtonDescription}>Send update to colleagues</div>
                   </div>
                 </button>
               </div>
@@ -1640,7 +2488,6 @@ TechFlow MSP`);
         </div>
       )}
 
-      {/* Action Modals */}
       {showActionModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContainer}>
@@ -1655,7 +2502,143 @@ TechFlow MSP`);
             </div>
             
             <div style={styles.modalContent}>
-              {/* Enterprise Knowledge Search */}
+              {actionModalType === 'Change Status' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>New Status</label>
+                    <select
+                      value={timerStatusChange}
+                      onChange={(e) => setTimerStatusChange(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Select Status</option>
+                      <option value="New">New</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Waiting">Waiting</option>
+                      <option value="Escalated">Escalated</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Status Change Notes</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Describe the reason for status change..."
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Stop Timer & Add Notes' && (
+                <div>
+                  <div style={styles.timerStoppedInfo}>
+                    <div style={styles.timerStoppedTime}>
+                      Timer Stopped: {formatTime(timerSeconds)}
+                    </div>
+                    <div style={styles.timerStoppedSubtext}>
+                      Time logged for ticket #{selectedTicket?.id}
+                    </div>
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Add Work Notes</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Describe the work completed during this time period..."
+                      rows={5}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Change Ticket Status (Optional)</label>
+                    <select
+                      value={timerStatusChange}
+                      onChange={(e) => setTimerStatusChange(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">No Status Change</option>
+                      <option value="New">New</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Waiting">Waiting</option>
+                      <option value="Escalated">Escalated</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={addToKnowledgeBase}
+                        onChange={(e) => setAddToKnowledgeBase(e.target.checked)}
+                        style={styles.checkbox}
+                      />
+                      Add to Company Knowledge Base
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {actionModalType === 'Enterprise Knowledge Search' && (
                 <div>
                   <div style={styles.formField}>
@@ -1672,6 +2655,15 @@ TechFlow MSP`);
                   <div style={styles.formField}>
                     <label style={styles.formLabel}>Search Sources</label>
                     <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={searchHistoricalTickets}
+                          onChange={(e) => setSearchHistoricalTickets(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Historical Tickets
+                      </label>
                       <label style={styles.checkboxLabel}>
                         <input
                           type="checkbox"
@@ -1704,7 +2696,6 @@ TechFlow MSP`);
                 </div>
               )}
 
-              {/* AI Draft Response */}
               {actionModalType === 'AI Draft Response' && (
                 <div>
                   <div style={styles.formField}>
@@ -1743,7 +2734,6 @@ TechFlow MSP`);
                 </div>
               )}
 
-              {/* Attach Files */}
               {actionModalType === 'Attach Files' && (
                 <div>
                   <div style={styles.formField}>
@@ -1755,7 +2745,7 @@ TechFlow MSP`);
                       onClick={() => document.getElementById('fileInput')?.click()}
                     >
                       <Paperclip size={48} style={{ color: '#94a3b8', marginBottom: '16px' }} />
-                      <p>Click to select files or drag and drop</p>
+                      <p style={{ fontSize: '18px', marginBottom: '8px' }}>Click to select files or drag and drop</p>
                       <p style={{ fontSize: '16px', color: '#94a3b8' }}>Supports images, documents, and screenshots</p>
                     </div>
                     <input
@@ -1771,10 +2761,7 @@ TechFlow MSP`);
                     <button
                       onClick={handlePasteScreenshot}
                       style={{
-                        ...styles.actionButton,
-                        backgroundColor: '#334155',
-                        color: '#e2e8f0',
-                        border: '1px solid #475569',
+                        ...styles.buttonPrimary,
                         width: '100%'
                       }}
                     >
@@ -1789,9 +2776,10 @@ TechFlow MSP`);
                       <div style={styles.fileList}>
                         {selectedFiles.map((file, index) => (
                           <div key={index} style={styles.fileItem}>
-                            <span style={{ color: '#cbd5e1' }}>
-                              {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                            </span>
+                            <div>
+                              <span style={styles.fileName}>{file.name}</span>
+                              <span style={styles.fileSize}> ({(file.size / 1024).toFixed(1)} KB)</span>
+                            </div>
                             <button
                               onClick={() => removeFile(index)}
                               style={styles.removeButton}
@@ -1806,176 +2794,28 @@ TechFlow MSP`);
                 </div>
               )}
 
-              {/* Change Status */}
-              {actionModalType === 'Change Status' && (
-                <div>
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>New Status</label>
-                    <select 
-                      value={timerStatusChange}
-                      onChange={(e) => setTimerStatusChange(e.target.value)}
-                      style={styles.formSelect}
-                    >
-                      <option value="">Select Status</option>
-                      <option value="New">New</option>
-                      <option value="Assigned">Assigned</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Waiting">Waiting for Client</option>
-                      <option value="Escalated">Escalated</option>
-                      <option value="Resolved">Resolved</option>
-                    </select>
-                  </div>
-                  
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Status Change Notes</label>
-                    <textarea
-                      value={timerNotes}
-                      onChange={(e) => setTimerNotes(e.target.value)}
-                      placeholder="Describe the reason for status change..."
-                      rows={4}
-                      style={styles.formTextarea}
-                    />
-                  </div>
-                  
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Note Type</label>
-                    <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="radio"
-                          value="public"
-                          checked={noteType === 'public'}
-                          onChange={(e) => setNoteType(e.target.value)}
-                          style={styles.checkbox}
-                        />
-                        Public (Client can see)
-                      </label>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="radio"
-                          value="internal"
-                          checked={noteType === 'internal'}
-                          onChange={(e) => setNoteType(e.target.value)}
-                          style={styles.checkbox}
-                        />
-                        Internal Only
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Stop Timer & Add Notes */}
-              {actionModalType === 'Stop Timer & Add Notes' && (
-                <div>
-                  <div style={{ 
-                    padding: '24px', 
-                    backgroundColor: '#1e293b', 
-                    borderRadius: '16px', 
-                    marginBottom: '24px',
-                    textAlign: 'center'
-                  }}>
-                    <div style={{ fontSize: '32px', fontWeight: '700', color: '#3b82f6', marginBottom: '12px' }}>
-                      Timer Stopped: 02:15:42
-                    </div>
-                    <div style={{ color: '#94a3b8', fontSize: '18px' }}>
-                      Time logged for ticket #{selectedTicket?.id}
-                    </div>
-                  </div>
-
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Add Work Notes</label>
-                    <textarea
-                      value={timerNotes}
-                      onChange={(e) => setTimerNotes(e.target.value)}
-                      placeholder="Describe the work completed during this time period..."
-                      rows={4}
-                      style={styles.formTextarea}
-                    />
-                  </div>
-
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Change Ticket Status (Optional)</label>
-                    <select 
-                      value={timerStatusChange}
-                      onChange={(e) => setTimerStatusChange(e.target.value)}
-                      style={styles.formSelect}
-                    >
-                      <option value="">No Status Change</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Waiting">Waiting for Client</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                  </div>
-
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Note Type</label>
-                    <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="radio"
-                          value="public"
-                          checked={noteType === 'public'}
-                          onChange={(e) => setNoteType(e.target.value)}
-                          style={styles.checkbox}
-                        />
-                        Public (Client can see)
-                      </label>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="radio"
-                          value="internal"
-                          checked={noteType === 'internal'}
-                          onChange={(e) => setNoteType(e.target.value)}
-                          style={styles.checkbox}
-                        />
-                        Internal Only
-                      </label>
-                    </div>
-                  </div>
-
-                  <div style={styles.formField}>
-                    <label style={styles.checkboxLabel}>
-                      <input
-                        type="checkbox"
-                        checked={addToKnowledgeBase}
-                        onChange={(e) => setAddToKnowledgeBase(e.target.checked)}
-                        style={styles.checkbox}
-                      />
-                      Add to Company Knowledge Base
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Manual Time Entry */}
               {actionModalType === 'Manual Time Entry' && (
                 <div>
-                  <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={styles.formLabel}>Hours</label>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Time Worked</label>
+                    <div style={{ display: 'flex', gap: '16px' }}>
                       <input
                         type="number"
                         value={timeHours}
                         onChange={(e) => setTimeHours(e.target.value)}
-                        placeholder="0"
+                        placeholder="Hours"
+                        style={{...styles.formInput, flex: 1}}
                         min="0"
                         max="24"
-                        style={styles.formInput}
                       />
-                    </div>
-                    
-                    <div style={{ flex: 1 }}>
-                      <label style={styles.formLabel}>Minutes</label>
                       <input
                         type="number"
                         value={timeMinutes}
                         onChange={(e) => setTimeMinutes(e.target.value)}
-                        placeholder="0"
+                        placeholder="Minutes"
+                        style={{...styles.formInput, flex: 1}}
                         min="0"
                         max="59"
-                        style={styles.formInput}
                       />
                     </div>
                   </div>
@@ -1985,7 +2825,7 @@ TechFlow MSP`);
                     <textarea
                       value={workDescription}
                       onChange={(e) => setWorkDescription(e.target.value)}
-                      placeholder="Describe the work performed..."
+                      placeholder="Describe the work completed..."
                       rows={4}
                       style={styles.formTextarea}
                     />
@@ -1993,24 +2833,24 @@ TechFlow MSP`);
                   
                   <div style={styles.formField}>
                     <label style={styles.formLabel}>Note Type</label>
-                    <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
                         <input
                           type="radio"
-                          value="public"
+                          name="timeEntryNoteType"
                           checked={timeEntryNoteType === 'public'}
-                          onChange={(e) => setTimeEntryNoteType(e.target.value)}
-                          style={styles.checkbox}
+                          onChange={() => setTimeEntryNoteType('public')}
+                          style={styles.radio}
                         />
                         Public (Client can see)
                       </label>
-                      <label style={styles.checkboxLabel}>
+                      <label style={styles.radioLabel}>
                         <input
                           type="radio"
-                          value="internal"
+                          name="timeEntryNoteType"
                           checked={timeEntryNoteType === 'internal'}
-                          onChange={(e) => setTimeEntryNoteType(e.target.value)}
-                          style={styles.checkbox}
+                          onChange={() => setTimeEntryNoteType('internal')}
+                          style={styles.radio}
                         />
                         Internal Only
                       </label>
@@ -2019,123 +2859,60 @@ TechFlow MSP`);
                 </div>
               )}
 
-              {/* Share Update */}
-              {actionModalType === 'Share Update' && (
-                <div>
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Share With</label>
-                    <select 
-                      value={shareUpdateStaff}
-                      onChange={(e) => setShareUpdateStaff(e.target.value)}
-                      style={styles.formSelect}
-                    >
-                      <option value="">Select Staff Member</option>
-                      {employees.map(employee => (
-                        <option key={employee} value={employee}>{employee}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Update Notes</label>
-                    <textarea
-                      value={shareUpdateNotes}
-                      onChange={(e) => setShareUpdateNotes(e.target.value)}
-                      placeholder="Add notes about the update..."
-                      rows={4}
-                      style={styles.formTextarea}
-                    />
-                  </div>
-                  
-                  <div style={styles.formField}>
-                    <label style={styles.formLabel}>Send Via</label>
-                    <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={shareViaEmail}
-                          onChange={(e) => setShareViaEmail(e.target.checked)}
-                          style={styles.checkbox}
-                        />
-                        Email
-                      </label>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={shareViaTeams}
-                          onChange={(e) => setShareViaTeams(e.target.checked)}
-                          style={styles.checkbox}
-                        />
-                        Teams Message
-                      </label>
-                      <label style={styles.checkboxLabel}>
-                        <input
-                          type="checkbox"
-                          checked={shareViaSMS}
-                          onChange={(e) => setShareViaSMS(e.target.checked)}
-                          style={styles.checkbox}
-                        />
-                        SMS
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Assign/Add Teammate */}
               {actionModalType === 'Assign/Add Teammate' && (
                 <div>
                   <div style={styles.formField}>
                     <label style={styles.formLabel}>Action Type</label>
-                    <div style={styles.checkboxGroup}>
-                      <label style={styles.checkboxLabel}>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
                         <input
                           type="radio"
+                          name="assignAction"
                           checked={isAssignTicket}
                           onChange={() => setIsAssignTicket(true)}
-                          style={styles.checkbox}
+                          style={styles.radio}
                         />
-                        Assign Ticket (transfer ownership)
+                        Assign Ticket (Transfer ownership)
                       </label>
-                      <label style={styles.checkboxLabel}>
+                      <label style={styles.radioLabel}>
                         <input
                           type="radio"
+                          name="assignAction"
                           checked={!isAssignTicket}
                           onChange={() => setIsAssignTicket(false)}
-                          style={styles.checkbox}
+                          style={styles.radio}
                         />
-                        Add Resource (keep as collaborator)
+                        Add Teammate (Collaborate)
                       </label>
                     </div>
                   </div>
                   
                   <div style={styles.formField}>
-                    <label style={styles.formLabel}>Select Engineer</label>
-                    <select 
+                    <label style={styles.formLabel}>Select Team Member</label>
+                    <select
                       value={assigneeSelection}
                       onChange={(e) => setAssigneeSelection(e.target.value)}
                       style={styles.formSelect}
                     >
-                      <option value="">Select Engineer</option>
-                      {engineers.map(engineer => (
-                        <option key={engineer} value={engineer}>{engineer}</option>
+                      <option value="">Choose team member...</option>
+                      {employees.map(employee => (
+                        <option key={employee} value={employee}>{employee}</option>
                       ))}
                     </select>
                   </div>
                 </div>
               )}
 
-              {/* Add Watchers */}
               {actionModalType === 'Add Watchers' && (
                 <div>
                   <div style={styles.formField}>
-                    <label style={styles.formLabel}>Internal Watcher (Colleague)</label>
-                    <select 
+                    <label style={styles.formLabel}>Internal Watcher</label>
+                    <select
                       value={internalWatcher}
                       onChange={(e) => setInternalWatcher(e.target.value)}
                       style={styles.formSelect}
                     >
-                      <option value="">Select Internal Watcher</option>
+                      <option value="">Select internal team member...</option>
                       {employees.map(employee => (
                         <option key={employee} value={employee}>{employee}</option>
                       ))}
@@ -2143,19 +2920,18 @@ TechFlow MSP`);
                   </div>
                   
                   <div style={styles.formField}>
-                    <label style={styles.formLabel}>External Watcher (Email)</label>
+                    <label style={styles.formLabel}>External Watcher Email</label>
                     <input
                       type="email"
                       value={externalWatcherEmail}
                       onChange={(e) => setExternalWatcherEmail(e.target.value)}
-                      placeholder="client@company.com"
+                      placeholder="external.contact@company.com"
                       style={styles.formInput}
                     />
                   </div>
                 </div>
               )}
 
-              {/* Request Escalation */}
               {actionModalType === 'Request Escalation' && (
                 <div>
                   <div style={styles.formField}>
@@ -2227,21 +3003,113 @@ TechFlow MSP`);
                   </div>
                 </div>
               )}
+
+              {actionModalType === 'Share Update' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Share With</label>
+                    <select
+                      value={shareUpdateStaff}
+                      onChange={(e) => setShareUpdateStaff(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Select team member...</option>
+                      {employees.map(employee => (
+                        <option key={employee} value={employee}>{employee}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Update Notes</label>
+                    <textarea
+                      value={shareUpdateNotes}
+                      onChange={(e) => setShareUpdateNotes(e.target.value)}
+                      placeholder="What update would you like to share?"
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Share Via</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaEmail}
+                          onChange={(e) => setShareViaEmail(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Email
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaTeams}
+                          onChange={(e) => setShareViaTeams(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Teams Message
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaSMS}
+                          onChange={(e) => setShareViaSMS(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        SMS / Text
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Add Note' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Content</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Add your note here..."
+                      rows={6}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              {/* Action buttons */}
-              <div style={{ 
-                marginTop: '32px', 
-                display: 'flex', 
-                justifyContent: 'flex-end',
-                gap: '16px'
-              }}>
+              <div style={styles.modalActions}>
                 <button 
-                  style={{
-                    ...styles.actionButton,
-                    backgroundColor: '#334155',
-                    color: '#e2e8f0',
-                    border: '1px solid #475569'
-                  }}
+                  style={styles.buttonCancel}
                   onClick={() => setShowActionModal(false)}
                 >
                   Cancel
@@ -2249,13 +3117,10 @@ TechFlow MSP`);
                 
                 <button 
                   style={{
-                    ...styles.actionButton,
-                    backgroundColor: actionModalType === 'Request Escalation' ? '#dc2626' : '#3b82f6',
-                    color: 'white'
+                    ...(actionModalType === 'Request Escalation' ? styles.buttonDanger : styles.buttonPrimary)
                   }}
                   onClick={() => {
                     if (actionModalType === 'Enterprise Knowledge Search') {
-                      // Demo search functionality
                       if (searchKeywords.toLowerCase().includes('exchange')) {
                         setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
 
@@ -2300,10 +3165,11 @@ TechFlow MSP`);
                    actionModalType === 'Change Status' ? 'Update Status' :
                    actionModalType === 'Stop Timer & Add Notes' ? 'Save Notes & Log Time' :
                    actionModalType === 'Manual Time Entry' ? 'Log Time Entry' :
-                   actionModalType === 'Share Update' ? 'Send Update' :
-                   actionModalType === 'Assign/Add Teammate' ? (isAssignTicket ? 'Assign Ticket' : 'Add Resource') :
+                   actionModalType === 'Assign/Add Teammate' ? (isAssignTicket ? 'Assign Ticket' : 'Add Teammate') :
                    actionModalType === 'Add Watchers' ? 'Add Watchers' :
                    actionModalType === 'Request Escalation' ? 'Submit Escalation' :
+                   actionModalType === 'Share Update' ? 'Share Update' :
+                   actionModalType === 'Add Note' ? 'Add Note' :
                    'Save Changes'}
                 </button>
               </div>
@@ -2316,12 +3182,3 @@ TechFlow MSP`);
 };
 
 export default ImprovedEngineerApp;
-                          type="checkbox"
-                          checked={searchHistoricalTickets}
-                          onChange={(e) => setSearchHistoricalTickets(e.target.checked)}
-                          style={styles.checkbox}
-                        />
-                        Historical Tickets
-                      </label>
-                      <label style={styles.checkboxLabel}>
-                        <input

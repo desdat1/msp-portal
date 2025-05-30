@@ -1,11 +1,16 @@
 {
   "version": 2,
-  "name": "ai-ticket-final",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
+  "functions": {
+    "pages/api/tickets.js": {
+      "memory": 1024,
+      "maxDuration": 30
     }
-  ],
-  // ... (complete config in artifact)
+  },
+  "redirects": [
+    {
+      "source": "/app",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }
