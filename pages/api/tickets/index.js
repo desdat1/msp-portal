@@ -1,5 +1,4 @@
-// pages/api/tickets/index.js - FIXED WEBHOOK DETECTION
-let tickets = [];
+// pages/api/tickets/index.js - Use Shared ConnectWise Data
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,32 +10,40 @@ export default function handler(req, res) {
     return;
   }
 
-  if (req.method === 'POST') {
-    // Debug logging
-    console.log('POST request received');
-    console.log('Body:', JSON.stringify(req.body, null, 2));
-    console.log('Has tickets property:', !!req.body?.tickets);
-    console.log('Body type:', typeof req.body);
+  if (req.method === 'GET') {
+    // Get ConnectWise tickets from global variable (set by cwsync endpoint)
+    const connectwiseTickets = global.connectwiseTickets || [];
+    const lastSync = global.lastConnectWiseSync || null;
     
-    // Check if this is a Make.com webhook (has tickets array)
-    if (req.body && Array.isArray(req.body.tickets)) {
-      console.log('Detected Make.com webhook with tickets array');
-      handleMakeWebhook(req, res);
-    } else if (req.body && req.body.tickets) {
-      console.log('Detected Make.com webhook with tickets property');
-      handleMakeWebhook(req, res);
-    } else {
-      console.log('Regular ticket creation detected');
-      handleTicketCreation(req, res);
-    }
-  } else if (req.method === 'GET') {
+    // If no ConnectWise tickets, show demo ticket
+    const tickets = connectwiseTickets.length > 0 ? connectwiseTickets : [{
+      id: 'DEMO-001',
+      priority: 'MEDIUM',
+      title: 'No ConnectWise tickets synced yet',
+      company: 'Demo Company', 
+      time: '1h ago',
+      status: 'New',
+      assignee: 'Sarah Chen',
+      contact: {
+        name: 'Demo User',
+        phone: '(555) 000-0000',
+        email: 'demo@company.com'
+      },
+      description: 'Run the Make.com scenario to sync ConnectWise tickets',
+      board: 'Help Desk',
+      type: 'Demo',
+      severity: 'Low',
+      impact: 'Low', 
+      urgency: 'Low'
+    }];
+
     res.status(200).json({ 
       tickets, 
       count: tickets.length,
       total: tickets.length,
       timestamp: new Date().toISOString(),
-      lastSync: null,
-      dataSource: tickets.length > 0 ? 'ConnectWise' : 'Demo',
+      lastSync: lastSync,
+      dataSource: connectwiseTickets.length > 0 ? 'ConnectWise Live' : 'Demo',
       filters: {
         status: 'all',
         priority: 'all', 
@@ -46,71 +53,74 @@ export default function handler(req, res) {
         limit: 100
       }
     });
+  } else if (req.method === 'POST') {
+    // Handle webhook data (same as before)
+    if (req.body && Array.isArray(req.body.tickets)) {
+      console.log('Detected Make.com webhook with tickets array');
+      handleMakeWebhook(req, res);
+    } else if (req.body && req.body.tickets) {
+      console.log('Detected Make.com webhook with tickets property');
+      handleMakeWebhook(req, res);
+    } else {
+      console.log('Regular ticket creation detected');
+      res.status(200).json({
+        success: true,
+        message: 'Regular ticket creation not implemented yet',
+        timestamp: new Date().toISOString()
+      });
+    }
   } else {
     res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
     res.status(405).json({ error: 'Method ' + req.method + ' Not Allowed' });
   }
 }
 
-// NEW: Handle Make.com webhook data
+// Handle Make.com webhook data
 async function handleMakeWebhook(req, res) {
   try {
-    console.log('=== MAKE.COM WEBHOOK RECEIVED (NO AUTH) ===');
-    console.log('Full body:', JSON.stringify(req.body, null, 2));
-
+    console.log('=== MAKE.COM WEBHOOK RECEIVED ===');
+    
     const { tickets: incomingTickets, timestamp, source } = req.body;
 
     if (!incomingTickets) {
-      console.log('ERROR: No tickets found in webhook data');
       res.status(400).json({ 
         error: 'Missing tickets data',
-        received: req.body,
-        help: 'Expected format: {"tickets": [...], "timestamp": "...", "source": "..."}'
+        received: req.body
       });
       return;
     }
 
-    console.log(`Processing ${Array.isArray(incomingTickets) ? incomingTickets.length : 1} tickets from ${source || 'unknown'}`);
-
-    // Transform and add ConnectWise tickets
+    // Transform tickets and store globally
     const transformedTickets = Array.isArray(incomingTickets) 
       ? incomingTickets.map(transformConnectWiseTicket) 
       : [transformConnectWiseTicket(incomingTickets)];
 
-    // Replace existing tickets to avoid duplicates
-    tickets = transformedTickets;
+    // Store in global variable for sharing with GET requests
+    global.connectwiseTickets = transformedTickets;
+    global.lastConnectWiseSync = new Date().toISOString();
 
-    console.log('Successfully processed ConnectWise tickets:', tickets.length);
+    console.log('Successfully processed and stored ConnectWise tickets:', transformedTickets.length);
 
     res.status(200).json({
       success: true,
       message: 'ConnectWise tickets synchronized successfully!',
       processed: transformedTickets.length,
       timestamp: new Date().toISOString(),
-      data: transformedTickets,
-      debug: {
-        originalTicketsCount: Array.isArray(incomingTickets) ? incomingTickets.length : 1,
-        source: source || 'unknown',
-        webhookDetected: true
-      }
+      data: transformedTickets
     });
 
   } catch (error) {
     console.error('Make.com webhook error:', error);
     res.status(500).json({
       error: 'Failed to process webhook',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: error.message
     });
   }
 }
 
 // Transform ConnectWise ticket to application format
 function transformConnectWiseTicket(cwTicket) {
-  if (!cwTicket) {
-    console.log('Warning: Empty ticket received');
-    return null;
-  }
+  if (!cwTicket) return null;
 
   console.log('Transforming ticket:', cwTicket?.id, cwTicket?.summary);
   
@@ -141,7 +151,7 @@ function mapConnectWisePriority(priority) {
   const p = priority.toString().toLowerCase();
   if (p.includes('urgent') || p.includes('critical') || p.includes('high') || p === '1') return 'HIGH';
   if (p.includes('low') || p === '4' || p === '5') return 'LOW';
-  if (p.includes('attention') || p.includes('escalat') || p.includes('4')) return 'NEEDS_ATTENTION';
+  if (p.includes('attention') || p.includes('escalat')) return 'NEEDS_ATTENTION';
   return 'MEDIUM';
 }
 
@@ -184,25 +194,5 @@ function formatConnectWiseTime(dateString) {
   } catch (error) {
     console.error('Error parsing date:', error);
     return 'Unknown';
-  }
-}
-
-// Handle regular ticket creation (legacy)
-async function handleTicketCreation(req, res) {
-  try {
-    console.log('=== Processing Regular Ticket ===');
-    
-    res.status(200).json({
-      success: true,
-      message: 'Regular ticket creation not implemented yet',
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('Error processing ticket:', error);
-    res.status(500).json({
-      error: 'Failed to process ticket',
-      message: error.message
-    });
   }
 }

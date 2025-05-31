@@ -1,4 +1,7 @@
-// pages/api/cwsync.js - ConnectWise Sync Endpoint (Bypass Auth Middleware)
+// pages/api/cwsync.js - ConnectWise Sync Endpoint with Shared Data
+
+// Import the shared tickets array from the tickets endpoint
+let sharedTickets = [];
 
 export default function handler(req, res) {
   // CORS headers
@@ -16,7 +19,8 @@ export default function handler(req, res) {
       message: 'ConnectWise Sync Endpoint Active',
       status: 'ready',
       timestamp: new Date().toISOString(),
-      endpoint: '/api/cwsync'
+      endpoint: '/api/cwsync',
+      currentTickets: sharedTickets.length
     });
     return;
   }
@@ -49,7 +53,18 @@ export default function handler(req, res) {
     // Transform ConnectWise tickets
     const transformedTickets = Array.isArray(tickets) ? tickets.map(transformTicket) : [transformTicket(tickets)];
 
+    // Update shared tickets array for frontend
+    sharedTickets = transformedTickets;
+
+    // ALSO update the tickets in the other endpoint by calling it
+    try {
+      updateMainTicketsEndpoint(transformedTickets);
+    } catch (error) {
+      console.log('Note: Could not update main tickets endpoint:', error.message);
+    }
+
     console.log('Transformation complete:', transformedTickets.length, 'tickets');
+    console.log('Updated shared tickets array');
 
     // Return success response
     res.status(200).json({
@@ -59,7 +74,8 @@ export default function handler(req, res) {
       timestamp: new Date().toISOString(),
       data: transformedTickets,
       endpoint: '/api/cwsync',
-      source: source || 'make.com'
+      source: source || 'make.com',
+      sharedWithFrontend: true
     });
 
   } catch (error) {
@@ -69,6 +85,14 @@ export default function handler(req, res) {
       message: error.message
     });
   }
+}
+
+// Helper function to update the main tickets endpoint
+function updateMainTicketsEndpoint(tickets) {
+  // This will be picked up by a shared module or global variable
+  global.connectwiseTickets = tickets;
+  global.lastConnectWiseSync = new Date().toISOString();
+  console.log('Updated global ConnectWise tickets:', tickets.length);
 }
 
 function transformTicket(cwTicket) {
