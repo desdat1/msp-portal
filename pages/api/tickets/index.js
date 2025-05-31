@@ -1,167 +1,208 @@
-// pages/api/tickets/index.js
-// Updated to serve ConnectWise tickets from cache
+// pages/api/tickets/index.js - FIXED WEBHOOK DETECTION
+let tickets = [];
 
-export default async function handler(req, res) {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      error: 'Method not allowed',
-      message: 'This endpoint only accepts GET requests'
-    });
+export default function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
   }
 
-  try {
-    let tickets = [];
-    let syncTimestamp = null;
-    let dataSource = 'none';
-
-    // Try to get tickets from Redis first (production)
-    if (process.env.REDIS_URL) {
-      try {
-        const { createClient } = require('redis');
-        const client = createClient({ url: process.env.REDIS_URL });
-        await client.connect();
-        
-        const cachedTickets = await client.get('connectwise_tickets');
-        const cachedTimestamp = await client.get('connectwise_sync_timestamp');
-        
-        await client.disconnect();
-        
-        if (cachedTickets) {
-          tickets = JSON.parse(cachedTickets);
-          syncTimestamp = cachedTimestamp;
-          dataSource = 'Redis';
-          console.log(`📊 Serving ${tickets.length} tickets from Redis cache`);
-        }
-      } catch (redisError) {
-        console.error('Redis read error:', redisError);
-        // Fall through to memory check
-      }
+  if (req.method === 'POST') {
+    // Debug logging
+    console.log('POST request received');
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('Has tickets property:', !!req.body?.tickets);
+    console.log('Body type:', typeof req.body);
+    
+    // Check if this is a Make.com webhook (has tickets array)
+    if (req.body && Array.isArray(req.body.tickets)) {
+      console.log('Detected Make.com webhook with tickets array');
+      handleMakeWebhook(req, res);
+    } else if (req.body && req.body.tickets) {
+      console.log('Detected Make.com webhook with tickets property');
+      handleMakeWebhook(req, res);
+    } else {
+      console.log('Regular ticket creation detected');
+      handleTicketCreation(req, res);
     }
-
-    // Fallback to memory storage (development)
-    if (tickets.length === 0 && global.connectwiseTickets) {
-      tickets = global.connectwiseTickets;
-      syncTimestamp = global.connectwiseSyncTime;
-      dataSource = 'Memory';
-      console.log(`📊 Serving ${tickets.length} tickets from memory`);
-    }
-
-    // If no cached tickets, return demo data or empty
-    if (tickets.length === 0) {
-      // Return sample demo ticket to show the structure
-      tickets = [{
-        id: 'DEMO-001',
-        priority: 'MEDIUM',
-        title: 'No ConnectWise tickets synced yet',
-        company: 'Demo Company',
-        time: '1h ago',
-        status: 'New',
-        assignee: 'Sarah Chen',
-        contact: {
-          name: 'Demo Contact',
-          phone: '(555) 123-4567',
-          email: 'demo@company.com'
-        },
-        description: 'Run the Make.com scenario to sync ConnectWise tickets',
-        board: 'Help Desk',
-        type: 'Demo',
-        severity: 'Low',
-        impact: 'Low',
-        urgency: 'Low'
-      }];
-      dataSource = 'Demo';
-      console.log('📋 No ConnectWise tickets found, serving demo data');
-    }
-
-    // Apply query filters if provided
-    let filteredTickets = tickets;
-    const { 
-      status, 
-      priority, 
-      assignee, 
-      company, 
-      search,
-      limit = 100 
-    } = req.query;
-
-    // Filter by status
-    if (status && status !== 'all') {
-      filteredTickets = filteredTickets.filter(ticket => 
-        ticket.status.toLowerCase() === status.toLowerCase()
-      );
-    }
-
-    // Filter by priority
-    if (priority && priority !== 'all') {
-      filteredTickets = filteredTickets.filter(ticket => 
-        ticket.priority.toLowerCase() === priority.toLowerCase()
-      );
-    }
-
-    // Filter by assignee
-    if (assignee && assignee !== 'all') {
-      filteredTickets = filteredTickets.filter(ticket => 
-        ticket.assignee.toLowerCase().includes(assignee.toLowerCase())
-      );
-    }
-
-    // Filter by company
-    if (company) {
-      filteredTickets = filteredTickets.filter(ticket => 
-        ticket.company.toLowerCase().includes(company.toLowerCase())
-      );
-    }
-
-    // Search filter
-    if (search) {
-      const searchTerm = search.toLowerCase();
-      filteredTickets = filteredTickets.filter(ticket => 
-        ticket.title.toLowerCase().includes(searchTerm) ||
-        ticket.company.toLowerCase().includes(searchTerm) ||
-        ticket.assignee.toLowerCase().includes(searchTerm) ||
-        ticket.id.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // Limit results
-    const limitNum = parseInt(limit);
-    if (limitNum > 0) {
-      filteredTickets = filteredTickets.slice(0, limitNum);
-    }
-
-    // Response
-    const response = {
-      tickets: filteredTickets,
-      count: filteredTickets.length,
+  } else if (req.method === 'GET') {
+    res.status(200).json({ 
+      tickets, 
+      count: tickets.length,
       total: tickets.length,
       timestamp: new Date().toISOString(),
-      lastSync: syncTimestamp,
-      dataSource: dataSource,
+      lastSync: null,
+      dataSource: tickets.length > 0 ? 'ConnectWise' : 'Demo',
       filters: {
-        status: status || 'all',
-        priority: priority || 'all',
-        assignee: assignee || 'all',
-        company: company || 'all',
-        search: search || '',
-        limit: limitNum
+        status: 'all',
+        priority: 'all', 
+        assignee: 'all',
+        company: 'all',
+        search: '',
+        limit: 100
       }
-    };
+    });
+  } else {
+    res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
+    res.status(405).json({ error: 'Method ' + req.method + ' Not Allowed' });
+  }
+}
 
-    // Add cache headers for better performance
-    res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
-    
-    return res.status(200).json(response);
+// NEW: Handle Make.com webhook data
+async function handleMakeWebhook(req, res) {
+  try {
+    console.log('=== MAKE.COM WEBHOOK RECEIVED (NO AUTH) ===');
+    console.log('Full body:', JSON.stringify(req.body, null, 2));
+
+    const { tickets: incomingTickets, timestamp, source } = req.body;
+
+    if (!incomingTickets) {
+      console.log('ERROR: No tickets found in webhook data');
+      res.status(400).json({ 
+        error: 'Missing tickets data',
+        received: req.body,
+        help: 'Expected format: {"tickets": [...], "timestamp": "...", "source": "..."}'
+      });
+      return;
+    }
+
+    console.log(`Processing ${Array.isArray(incomingTickets) ? incomingTickets.length : 1} tickets from ${source || 'unknown'}`);
+
+    // Transform and add ConnectWise tickets
+    const transformedTickets = Array.isArray(incomingTickets) 
+      ? incomingTickets.map(transformConnectWiseTicket) 
+      : [transformConnectWiseTicket(incomingTickets)];
+
+    // Replace existing tickets to avoid duplicates
+    tickets = transformedTickets;
+
+    console.log('Successfully processed ConnectWise tickets:', tickets.length);
+
+    res.status(200).json({
+      success: true,
+      message: 'ConnectWise tickets synchronized successfully!',
+      processed: transformedTickets.length,
+      timestamp: new Date().toISOString(),
+      data: transformedTickets,
+      debug: {
+        originalTicketsCount: Array.isArray(incomingTickets) ? incomingTickets.length : 1,
+        source: source || 'unknown',
+        webhookDetected: true
+      }
+    });
 
   } catch (error) {
-    console.error('❌ Tickets endpoint error:', error);
-    
-    return res.status(500).json({
-      error: 'Internal server error',
+    console.error('Make.com webhook error:', error);
+    res.status(500).json({
+      error: 'Failed to process webhook',
       message: error.message,
-      timestamp: new Date().toISOString(),
-      tickets: [],
-      count: 0
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
+
+// Transform ConnectWise ticket to application format
+function transformConnectWiseTicket(cwTicket) {
+  if (!cwTicket) {
+    console.log('Warning: Empty ticket received');
+    return null;
+  }
+
+  console.log('Transforming ticket:', cwTicket?.id, cwTicket?.summary);
+  
+  return {
+    id: `CW-${cwTicket.id || Date.now()}`,
+    priority: mapConnectWisePriority(cwTicket.priority?.name || cwTicket.priority),
+    title: cwTicket.summary || cwTicket.subject || 'ConnectWise Ticket',
+    company: cwTicket.company?.name || cwTicket.companyName || 'Unknown Company',
+    time: formatConnectWiseTime(cwTicket.dateEntered || cwTicket._info?.dateEntered),
+    status: mapConnectWiseStatus(cwTicket.status?.name || cwTicket.status),
+    assignee: getConnectWiseAssignee(cwTicket),
+    contact: {
+      name: cwTicket.contact?.name || cwTicket.contactName || 'ConnectWise User',
+      phone: cwTicket.contact?.phone || cwTicket.contactPhone || '(555) 000-0000',
+      email: cwTicket.contact?.email || cwTicket.contactEmail || 'support@company.com'
+    },
+    description: cwTicket.initialDescription || cwTicket.description || '',
+    board: cwTicket.board?.name || 'Default',
+    type: cwTicket.type?.name || 'Service Request',
+    severity: cwTicket.severity || 'Medium',
+    impact: cwTicket.impact || 'Medium',
+    urgency: cwTicket.urgency || 'Medium'
+  };
+}
+
+function mapConnectWisePriority(priority) {
+  if (!priority) return 'MEDIUM';
+  const p = priority.toString().toLowerCase();
+  if (p.includes('urgent') || p.includes('critical') || p.includes('high') || p === '1') return 'HIGH';
+  if (p.includes('low') || p === '4' || p === '5') return 'LOW';
+  if (p.includes('attention') || p.includes('escalat') || p.includes('4')) return 'NEEDS_ATTENTION';
+  return 'MEDIUM';
+}
+
+function mapConnectWiseStatus(status) {
+  if (!status) return 'New';
+  const s = status.toString().toLowerCase();
+  if (s.includes('new') || s.includes('open')) return 'New';
+  if (s.includes('assign')) return 'Assigned';
+  if (s.includes('progress') || s.includes('working')) return 'In Progress';
+  if (s.includes('wait') || s.includes('pending')) return 'Waiting';
+  if (s.includes('escalat')) return 'Escalated';
+  if (s.includes('resolv') || s.includes('complet') || s.includes('clos')) return 'Resolved';
+  return 'New';
+}
+
+function getConnectWiseAssignee(ticket) {
+  if (ticket?.owner?.name) return ticket.owner.name;
+  if (ticket?.assignedTo?.name) return ticket.assignedTo.name;
+  if (ticket?.resources && ticket.resources.length > 0) {
+    return ticket.resources[0].name || ticket.resources[0];
+  }
+  return 'Unassigned';
+}
+
+function formatConnectWiseTime(dateString) {
+  if (!dateString) return 'Unknown';
+  
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ${diffMins % 60}m ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  } catch (error) {
+    console.error('Error parsing date:', error);
+    return 'Unknown';
+  }
+}
+
+// Handle regular ticket creation (legacy)
+async function handleTicketCreation(req, res) {
+  try {
+    console.log('=== Processing Regular Ticket ===');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Regular ticket creation not implemented yet',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error processing ticket:', error);
+    res.status(500).json({
+      error: 'Failed to process ticket',
+      message: error.message
     });
   }
 }
