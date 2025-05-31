@@ -74,7 +74,7 @@ const useTickets = (): UseTicketsReturn => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/tickets', {
+      const response = await fetch('/api/cwsync', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
