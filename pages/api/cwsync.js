@@ -15,12 +15,43 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'GET') {
+    // Return frontend-compatible format
+    const tickets = sharedTickets.length > 0 ? sharedTickets : [{
+      id: 'DEMO-001',
+      priority: 'MEDIUM',
+      title: 'No ConnectWise tickets synced yet',
+      company: 'Demo Company', 
+      time: '1h ago',
+      status: 'New',
+      assignee: 'Sarah Chen',
+      contact: {
+        name: 'Demo User',
+        phone: '(555) 000-0000',
+        email: 'demo@company.com'
+      },
+      description: 'Run the Make.com scenario to sync ConnectWise tickets',
+      board: 'Help Desk',
+      type: 'Demo',
+      severity: 'Low',
+      impact: 'Low', 
+      urgency: 'Low'
+    }];
+
     res.status(200).json({ 
-      message: 'ConnectWise Sync Endpoint Active',
-      status: 'ready',
+      tickets, 
+      count: tickets.length,
+      total: tickets.length,
       timestamp: new Date().toISOString(),
-      endpoint: '/api/cwsync',
-      currentTickets: sharedTickets.length
+      lastSync: sharedTickets.length > 0 ? new Date().toISOString() : null,
+      dataSource: sharedTickets.length > 0 ? 'ConnectWise Live' : 'Demo',
+      filters: {
+        status: 'all',
+        priority: 'all', 
+        assignee: 'all',
+        company: 'all',
+        search: '',
+        limit: 100
+      }
     });
     return;
   }
