@@ -1,190 +1,382 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { 
+  Search, 
+  Settings, 
+  Brain,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Minus,
+  MessageSquare,
+  Clock,
+  Users,
+  AlertTriangle,
+  X,
+  Play,
+  Pause,
+  Paperclip,
+  Send,
+  Edit3,
+  Timer,
+  User,
+  RefreshCw,
+  Clipboard,
+  Phone,
+  Mail,
+  Building2,
+  FileText,
+  CheckCircle,
+  Circle,
+  Zap,
+  Target,
+  Eye,
+  Share2,
+  Flag,
+  Wrench,
+  Monitor,
+  Database,
+  Building,
+  Tag
+} from 'lucide-react';
+import useTickets from '../hooks/useTickets';
+import { Ticket } from '../types/Ticket';
 
-const styles = {
+// 🛠️ DEFENSIVE RENDERING FUNCTIONS FOR CONNECTWISE OBJECTS
+const safeString = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'object' && value.name) return value.name;
+  if (typeof value === 'object' && value.text) return value.text;
+  if (typeof value === 'object' && value.value) return value.value;
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const safeContact = (contact: any) => {
+  if (!contact) return { name: 'Unknown', phone: '', email: '' };
+  if (typeof contact === 'string') return { name: contact, phone: '', email: '' };
+  return {
+    name: safeString(contact.name || contact.displayName || contact),
+    phone: safeString(contact.phone || contact.phoneNumber || ''),
+    email: safeString(contact.email || contact.emailAddress || '')
+  };
+};
+
+const safePriority = (priority: any): string => {
+  const priorityStr = safeString(priority);
+  const upperPriority = priorityStr.toUpperCase();
+  if (['HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'].includes(upperPriority)) {
+    return upperPriority;
+  }
+  if (priorityStr.toLowerCase().includes('high') || priorityStr.includes('1')) return 'HIGH';
+  if (priorityStr.toLowerCase().includes('medium') || priorityStr.includes('2')) return 'MEDIUM';
+  if (priorityStr.toLowerCase().includes('low') || priorityStr.includes('3')) return 'LOW';
+  if (priorityStr.toLowerCase().includes('attention')) return 'NEEDS_ATTENTION';
+  return 'MEDIUM'; // Default fallback
+};
+
+const safeStatus = (status: any): string => {
+  const statusStr = safeString(status);
+  const validStatuses = ['New', 'Assigned', 'In Progress', 'Waiting', 'Escalated', 'Resolved'];
+  const foundStatus = validStatuses.find(s => statusStr.toLowerCase().includes(s.toLowerCase()));
+  return foundStatus || 'New'; // Default fallback
+};
+
+const styles: { [key: string]: React.CSSProperties } = {
   container: {
     minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
     backgroundColor: '#0f172a',
     color: '#e2e8f0',
-    fontFamily: 'system-ui, -apple-system, sans-serif'
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    fontSize: '18px'
   },
   header: {
+    position: 'sticky',
+    top: 0,
+    height: '80px',
     backgroundColor: '#1e293b',
-    padding: '12px 20px',
     borderBottom: '1px solid #334155',
-    position: 'relative' as const
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '0 32px',
+    zIndex: 100
   },
-  headerToggle: {
-    position: 'absolute' as const,
-    left: '8px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: '#475569',
-    border: '1px solid #64748b',
-    borderRadius: '4px',
-    padding: '4px 8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    color: '#e2e8f0',
-    transition: 'all 0.2s'
-  },
-  headerContent: {
-    marginLeft: '0px',
-    transition: 'margin-left 0.3s ease'
-  },
-  headerContentShifted: {
-    marginLeft: '40px'
-  },
-  headerTitle: {
-    fontSize: '20px',
+  logo: {
+    fontSize: '24px',
     fontWeight: '700',
-    marginBottom: '4px'
-  },
-  headerSubtitle: {
-    fontSize: '12px',
-    opacity: 0.9,
-    marginBottom: '8px'
-  },
-  stats: {
-    display: 'flex',
-    gap: '16px',
-    fontSize: '11px'
-  },
-  stat: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: '3px 6px',
-    borderRadius: '3px'
-  },
-  main: {
-    display: 'flex',
-    height: 'calc(100vh - 80px)'
-  },
-  leftPanel: {
-    width: '28%',
-    backgroundColor: '#1e293b',
-    borderRight: '1px solid #334155',
-    display: 'flex' as const,
-    flexDirection: 'column' as const,
-    transition: 'all 0.3s ease',
-    position: 'relative' as const
-  },
-  leftPanelHidden: {
-    width: '0',
-    overflow: 'hidden'
-  },
-  toggleButton: {
-    position: 'absolute' as const,
-    right: '-15px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: '#334155',
-    border: '1px solid #475569',
-    borderRadius: '0 6px 6px 0',
-    padding: '8px 4px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    color: '#e2e8f0',
-    zIndex: 10,
-    transition: 'all 0.2s'
-  },
-  toggleButtonHidden: {
-    display: 'none'
-  },
-  rightPanel: {
-    flex: 1,
-    backgroundColor: '#0f172a',
-    display: 'flex' as const,
-    flexDirection: 'column' as const
-  },
-  filtersSection: {
-    padding: '12px',
-    borderBottom: '1px solid #334155'
-  },
-  searchBar: {
-    width: '100%',
-    padding: '6px 10px',
-    border: '1px solid #475569',
-    borderRadius: '4px',
-    fontSize: '12px',
-    marginBottom: '8px',
-    backgroundColor: '#334155',
     color: '#e2e8f0'
   },
-  controlsRow: {
+  searchContainer: {
+    position: 'relative',
+    flex: 1,
+    maxWidth: '500px',
+    margin: '0 40px'
+  },
+  searchInput: {
+    width: '100%',
+    padding: '16px 20px 16px 56px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    color: '#e2e8f0',
+    fontSize: '18px',
+    outline: 'none',
+    transition: 'border-color 0.2s'
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: '20px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#94a3b8'
+  },
+  userInfo: {
+    fontSize: '18px',
+    color: '#cbd5e1',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px'
+  },
+  refreshButton: {
+    padding: '8px 12px',
+    backgroundColor: 'transparent',
+    border: '1px solid #475569',
+    borderRadius: '8px',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 200
+  },
+  errorBanner: {
+    backgroundColor: '#dc2626',
+    color: 'white',
+    padding: '12px 24px',
+    textAlign: 'center',
+    fontSize: '16px'
+  },
+  mainContent: {
+    display: 'flex',
+    flex: 1,
+    overflow: 'hidden'
+  },
+  ticketsSidebar: {
+    width: '420px',
+    backgroundColor: '#1e293b',
+    borderRight: '1px solid #334155',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  },
+  sidebarHeader: {
+    padding: '24px',
+    borderBottom: '1px solid #334155',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  sidebarTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#e2e8f0'
+  },
+  sidebarStats: {
+    fontSize: '16px',
+    color: '#94a3b8'
+  },
+  filterTabs: {
+    display: 'flex',
+    padding: '16px 24px 0',
+    gap: '12px',
+    borderBottom: '1px solid #334155',
+    flexDirection: 'column'
+  },
+  filterRow: {
     display: 'flex',
     gap: '8px',
-    alignItems: 'center',
-    marginBottom: '8px'
+    marginBottom: '16px',
+    flexWrap: 'wrap'
   },
-  select: {
-    padding: '4px 8px',
-    border: '1px solid #475569',
-    borderRadius: '3px',
-    fontSize: '10px',
-    backgroundColor: '#334155',
-    color: '#e2e8f0',
-    minWidth: '80px'
-  },
-  tabsRow: {
-    display: 'flex',
-    gap: '6px'
-  },
-  tab: {
-    flex: 1,
-    padding: '6px 10px',
-    border: '1px solid #475569',
-    borderRadius: '3px',
+  filterTab: {
+    padding: '10px 14px',
+    borderRadius: '8px',
+    fontSize: '16px',
+    fontWeight: '500',
     cursor: 'pointer',
-    fontSize: '10px',
-    textAlign: 'center' as const,
     transition: 'all 0.2s',
-    backgroundColor: 'transparent',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap'
+  },
+  filterTabActive: {
+    backgroundColor: '#3b82f6',
+    color: 'white'
+  },
+  filterTabInactive: {
+    backgroundColor: '#334155',
     color: '#cbd5e1'
   },
-  tabActive: {
+  filterSelect: {
+    padding: '10px 14px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '8px',
+    color: '#e2e8f0',
+    fontSize: '15px',
+    minHeight: '44px',
+    minWidth: '130px',
+    cursor: 'pointer'
+  },
+  filterInput: {
+    padding: '10px 14px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '8px',
+    color: '#e2e8f0',
+    fontSize: '15px',
+    minHeight: '44px',
+    minWidth: '160px',
+    outline: 'none'
+  },
+  quickFilterChips: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '16px',
+    flexWrap: 'wrap'
+  },
+  quickFilterChip: {
+    padding: '6px 12px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '20px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  quickFilterChipActive: {
     backgroundColor: '#3b82f6',
-    color: 'white',
-    borderColor: '#3b82f6'
+    borderColor: '#3b82f6',
+    color: 'white'
   },
   ticketsList: {
     flex: 1,
-    overflowY: 'scroll' as const
+    overflowY: 'auto',
+    padding: '0 16px'
   },
-  ticket: {
-    padding: '12px',
-    borderBottom: '1px solid #334155',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
+  ticketCard: {
+    margin: '16px 0',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    transition: 'all 0.2s',
+    cursor: 'pointer'
   },
-  ticketSelected: {
+  ticketCardSelected: {
     backgroundColor: '#1e40af',
-    borderLeft: '4px solid #3b82f6'
+    borderColor: '#3b82f6',
+    transform: 'scale(1.02)',
+    boxShadow: '0 8px 25px rgba(59, 130, 246, 0.15)'
   },
-  ticketEscalated: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    borderLeft: '4px solid #ef4444'
-  },
-  ticketHighPriority: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)'
-  },
-  ticketMediumPriority: {
-    backgroundColor: 'rgba(245, 158, 11, 0.1)'
+  ticketCardHover: {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
   },
   ticketHeader: {
+    padding: '18px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '12px'
+  },
+  ticketHeaderLeft: {
+    flex: 1,
+    minWidth: 0
+  },
+  ticketNumber: {
+    fontSize: '17px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    marginBottom: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  ticketTitle: {
+    fontSize: '17px',
+    fontWeight: '500',
+    color: '#e2e8f0',
+    marginBottom: '10px',
+    lineHeight: '1.3',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical'
+  },
+  ticketCompany: {
+    fontSize: '15px',
+    color: '#94a3b8',
+    marginBottom: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  ticketMeta: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4px'
+    fontSize: '15px',
+    color: '#94a3b8',
+    flexWrap: 'wrap',
+    gap: '8px'
   },
-  ticketNumber: {
-    fontWeight: '600',
-    fontSize: '12px'
+  ticketTags: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    marginTop: '8px'
   },
-  priority: {
-    padding: '1px 4px',
-    borderRadius: '8px',
-    fontSize: '8px',
+  ticketTag: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    backgroundColor: '#475569',
+    color: '#e2e8f0'
+  },
+  priorityBadge: {
+    padding: '6px 12px',
+    borderRadius: '20px',
+    fontSize: '13px',
     fontWeight: '600',
-    textTransform: 'uppercase' as const
+    textTransform: 'uppercase',
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
   },
   priorityHigh: {
     backgroundColor: '#fee2e2',
@@ -198,1889 +390,2854 @@ const styles = {
     backgroundColor: '#dcfce7',
     color: '#16a34a'
   },
-  clientName: {
-    fontSize: '10px',
-    color: '#94a3b8',
-    marginBottom: '3px'
+  priorityNeedsAttention: {
+    backgroundColor: '#fce7f3',
+    color: '#be185d'
   },
-  ticketSubject: {
-    fontSize: '11px',
-    color: '#cbd5e1',
-    marginBottom: '6px',
-    lineHeight: 1.2
-  },
-  ticketMeta: {
+  statusBadge: {
+    padding: '4px 10px',
+    borderRadius: '50px',
+    fontSize: '12px',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginLeft: '8px',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: '9px',
-    color: '#64748b'
-  },
-  status: {
-    padding: '1px 6px',
-    borderRadius: '8px',
-    fontWeight: '500'
+    gap: '4px'
   },
   statusNew: {
-    backgroundColor: '#dbeafe',
-    color: '#2563eb'
+    backgroundColor: '#ddd6fe',
+    color: '#7c3aed'
   },
-  statusInProgress: {
+  statusAssigned: {
     backgroundColor: '#fef3c7',
     color: '#d97706'
   },
-  statusPending: {
-    backgroundColor: '#f3e8ff',
-    color: '#7c3aed'
+  statusInProgress: {
+    backgroundColor: '#bfdbfe',
+    color: '#1d4ed8'
+  },
+  statusWaiting: {
+    backgroundColor: '#fed7aa',
+    color: '#ea580c'
   },
   statusEscalated: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#fee2e2',
     color: '#dc2626'
   },
-  topSection: {
-    backgroundColor: '#1e293b',
-    padding: '16px',
-    borderBottom: '1px solid #334155',
-    minHeight: '200px',
-    display: 'flex',
-    gap: '20px'
+  statusResolved: {
+    backgroundColor: '#dcfce7',
+    color: '#16a34a'
   },
-  bottomSplitSection: {
-    backgroundColor: '#1e293b',
+  expandIcon: {
+    color: '#94a3b8',
+    marginLeft: '12px',
+    flexShrink: 0,
+    transition: 'transform 0.2s'
+  },
+  ticketDetails: {
+    padding: '0 18px 18px',
+    borderTop: '1px solid #475569',
+    backgroundColor: '#1e293b'
+  },
+  ticketDescription: {
+    fontSize: '15px',
+    color: '#cbd5e1',
+    lineHeight: '1.5',
+    marginBottom: '16px',
+    padding: '12px',
+    backgroundColor: '#334155',
+    borderRadius: '8px',
+    border: '1px solid #475569'
+  },
+  ticketMetaGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '12px',
+    marginBottom: '16px'
+  },
+  ticketMetaItem: {
+    padding: '8px 12px',
+    backgroundColor: '#334155',
+    borderRadius: '6px',
+    border: '1px solid #475569'
+  },
+  ticketMetaLabel: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: '4px'
+  },
+  ticketMetaValue: {
+    fontSize: '14px',
+    color: '#e2e8f0',
+    fontWeight: '500'
+  },
+  quickActions: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '16px',
+    flexWrap: 'wrap'
+  },
+  quickAction: {
+    padding: '10px 14px',
+    backgroundColor: '#0f172a',
+    color: '#94a3b8',
+    border: '1px solid #334155',
+    borderRadius: '8px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px'
+  },
+  quickActionPrimary: {
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderColor: '#3b82f6'
+  },
+  quickActionDanger: {
+    backgroundColor: '#dc2626',
+    color: 'white',
+    borderColor: '#dc2626'
+  },
+  contentArea: {
     flex: 1,
     display: 'flex',
-    height: 'calc(100vh - 260px)'
+    flexDirection: 'column',
+    backgroundColor: '#0f172a',
+    overflow: 'hidden'
   },
-  analysisHalf: {
-    width: '50%',
-    padding: '16px',
-    borderRight: '1px solid #334155',
-    overflowY: 'auto' as const,
+  ticketDetailsHeader: {
+    padding: '32px 40px',
+    borderBottom: '1px solid #334155',
+    backgroundColor: '#1e293b'
+  },
+  ticketDetailsTitle: {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#e2e8f0',
+    marginBottom: '16px',
+    lineHeight: '1.3'
+  },
+  ticketDetailsSubtitle: {
+    fontSize: '20px',
+    color: '#94a3b8',
+    marginBottom: '24px',
     display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%'
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap'
   },
-  notesHalf: {
-    width: '50%',
-    padding: '16px',
-    overflowY: 'auto' as const,
-    overflowX: 'hidden' as const,
+  ticketDetailsActions: {
     display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%'
+    gap: '16px',
+    flexWrap: 'wrap'
   },
-  lastNotesSection: {
-    marginTop: '12px',
-    marginBottom: '8px'
+  actionButton: {
+    padding: '16px 24px',
+    borderRadius: '12px',
+    fontSize: '18px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    border: 'none',
+    transition: 'all 0.2s',
+    minHeight: '56px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
   },
-  lastNotesTitle: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#cbd5e1',
-    marginBottom: '8px'
+  actionButtonPrimary: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
   },
-  lastNotesContainer: {
+  actionButtonSecondary: {
     backgroundColor: '#334155',
     border: '1px solid #475569',
-    borderRadius: '6px',
-    maxHeight: '120px',
-    overflowY: 'scroll' as const
+    color: '#e2e8f0'
+  },
+  actionButtonDanger: {
+    backgroundColor: '#dc2626',
+    borderColor: '#dc2626',
+    color: 'white'
+  },
+  actionButtonSuccess: {
+    backgroundColor: '#16a34a',
+    borderColor: '#16a34a',
+    color: 'white'
+  },
+  actionButtonWarning: {
+    backgroundColor: '#d97706',
+    borderColor: '#d97706',
+    color: 'white'
+  },
+  ticketContent: {
+    flex: 1,
+    display: 'flex',
+    overflow: 'hidden'
+  },
+  mainTicketArea: {
+    flex: 1,
+    padding: '40px',
+    overflowY: 'auto'
+  },
+  sectionCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: '16px',
+    border: '1px solid #334155',
+    marginBottom: '32px',
+    overflow: 'hidden'
+  },
+  sectionHeader: {
+    padding: '24px',
+    borderBottom: '1px solid #334155',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    cursor: 'pointer',
+    transition: 'background 0.2s'
+  },
+  sectionHeaderHover: {
+    backgroundColor: '#334155'
+  },
+  sectionTitle: {
+    fontSize: '22px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px'
+  },
+  sectionBadge: {
+    padding: '4px 8px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  sectionContent: {
+    padding: '24px'
   },
   noteItem: {
-    padding: '8px 10px',
-    borderBottom: '1px solid #475569',
-    fontSize: '11px',
-    lineHeight: 1.4
+    padding: '24px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    marginBottom: '20px',
+    transition: 'all 0.2s'
   },
-  noteItemLast: {
-    borderBottom: 'none'
+  noteItemHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c'
   },
   noteHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4px'
+    marginBottom: '16px'
   },
   noteAuthor: {
+    fontSize: '18px',
     fontWeight: '600',
-    color: '#e2e8f0'
-  },
-  noteDate: {
-    color: '#94a3b8',
-    fontSize: '10px'
-  },
-  noteText: {
-    color: '#cbd5e1'
-  },
-  analysisHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '12px'
-  },
-  cloneButton: {
-    padding: '4px 8px',
-    backgroundColor: '#475569',
-    border: '1px solid #64748b',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontSize: '10px',
     color: '#e2e8f0',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
+  noteTime: {
+    fontSize: '16px',
+    color: '#94a3b8'
+  },
+  noteContent: {
+    fontSize: '18px',
+    color: '#cbd5e1',
+    lineHeight: '1.6'
+  },
+  noteType: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '500',
+    textTransform: 'uppercase'
+  },
+  noteTypePublic: {
+    backgroundColor: '#dcfce7',
+    color: '#16a34a'
+  },
+  noteTypeInternal: {
+    backgroundColor: '#fef3c7',
+    color: '#d97706'
+  },
+  addNoteSection: {
+    padding: '24px',
+    backgroundColor: '#334155',
+    border: '2px dashed #475569',
+    borderRadius: '12px',
+    textAlign: 'center',
+    cursor: 'pointer',
     transition: 'all 0.2s'
   },
-  analysisPlaceholder: {
-    backgroundColor: '#334155',
-    padding: '40px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    color: '#94a3b8',
-    textAlign: 'center' as const,
-    fontStyle: 'italic'
+  addNoteSectionHover: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#3f4a5a'
   },
-  ticketOverview: {
-    flex: 2,
-    paddingRight: '20px'
+  aiActions: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px',
+    marginBottom: '32px'
   },
-  contactSummary: {
-    flex: 1,
-    paddingLeft: '20px',
-    borderLeft: '1px solid #334155',
-    display: 'flex',
-    gap: '20px'
-  },
-  contactLeft: {
-    flex: 1
-  },
-  contactRight: {
-    flex: 1
-  },
-  ticketTitle: {
+  aiButton: {
+    padding: '16px 20px',
+    backgroundColor: '#1e293b',
+    color: '#e2e8f0',
+    border: '1px solid #334155',
+    borderRadius: '12px',
+    fontSize: '18px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    textAlign: 'center',
+    minHeight: '70px',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px'
+    justifyContent: 'center',
+    gap: '8px'
   },
-  ticketId: {
-    fontSize: '20px',
-    fontWeight: '700'
+  aiButtonHover: {
+    backgroundColor: '#334155',
+    borderColor: '#3b82f6',
+    transform: 'translateY(-2px)'
   },
-  badge: {
-    padding: '3px 6px',
-    borderRadius: '3px',
-    fontSize: '10px',
-    fontWeight: '600'
-  },
-  badgeRed: {
-    backgroundColor: '#dc2626',
+  aiButtonActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
     color: 'white'
   },
-  ticketDescription: {
-    backgroundColor: '#334155',
-    padding: '10px',
-    borderRadius: '6px',
-    fontSize: '15px',
-    fontWeight: '600',
-    lineHeight: 1.4,
-    marginBottom: '10px'
+  analysisResults: {
+    backgroundColor: '#1e293b',
+    borderRadius: '12px',
+    padding: '24px',
+    minHeight: '160px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid #334155'
   },
-  contactInfo: {
-    fontSize: '12px'
+  analysisPlaceholder: {
+    color: '#94a3b8',
+    fontSize: '18px',
+    textAlign: 'center'
+  },
+  analysisContent: {
+    whiteSpace: 'pre-line',
+    textAlign: 'left',
+    width: '100%',
+    fontSize: '18px',
+    lineHeight: '1.6',
+    color: '#e2e8f0'
+  },
+  rightSidebar: {
+    width: '400px',
+    backgroundColor: '#1e293b',
+    borderLeft: '1px solid #334155',
+    padding: '32px',
+    overflowY: 'auto'
+  },
+  sidebarSection: {
+    marginBottom: '40px'
+  },
+  sidebarSectionTitle: {
+    fontSize: '22px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    marginBottom: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px'
   },
   contactField: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '2px',
-    marginBottom: '8px'
+    marginBottom: '20px'
   },
   contactLabel: {
-    fontSize: '10px',
+    fontSize: '16px',
     color: '#94a3b8',
-    fontWeight: '500'
+    marginBottom: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
   },
   contactValue: {
-    color: '#e2e8f0'
-  },
-  link: {
-    color: '#3b82f6',
-    textDecoration: 'none'
-  },
-  actionButtonsSection: {
-    backgroundColor: '#1e293b',
-    padding: '12px 16px',
-    borderBottom: '1px solid #334155',
-    minHeight: '100px',
-    display: 'flex',
-    gap: '20px'
-  },
-  aiColumn: {
-    flex: 1
-  },
-  managementColumn: {
-    flex: 1
-  },
-  sectionTitle: {
-    fontSize: '14px',
-    fontWeight: '600',
-    marginBottom: '10px'
-  },
-  buttonGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '6px'
-  },
-  button: {
-    padding: '6px 10px',
+    fontSize: '20px',
+    color: '#e2e8f0',
+    fontWeight: '500',
+    padding: '12px',
     backgroundColor: '#334155',
+    borderRadius: '8px',
     border: '1px solid #475569',
-    borderRadius: '4px',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    fontSize: '10px',
-    fontWeight: '600',
-    color: '#e2e8f0'
+    transition: 'all 0.2s'
   },
-  timer: {
-    backgroundColor: '#1e40af',
-    border: '1px solid #3b82f6',
-    borderRadius: '4px',
-    padding: '2px 8px',
-    fontFamily: 'monospace',
-    fontSize: '10px',
-    color: '#dbeafe',
-    textAlign: 'center' as const,
-    minWidth: '60px'
+  contactValueHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c'
   },
-  timeTrackingHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px'
-  },
-  textarea: {
+  managementButton: {
     width: '100%',
-    minHeight: '160px',
-    padding: '10px',
-    border: '1px solid #475569',
-    borderRadius: '4px',
-    fontFamily: 'inherit',
-    fontSize: '12px',
-    resize: 'vertical' as const,
-    marginBottom: '10px',
+    padding: '20px 24px',
+    marginBottom: '16px',
     backgroundColor: '#334155',
     color: '#e2e8f0',
-    boxSizing: 'border-box' as const,
-    overflowX: 'hidden' as const,
-    wordWrap: 'break-word' as const
-  },
-  noteControls: {
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'center',
-    flexWrap: 'wrap' as const,
-    fontSize: '12px',
-    marginBottom: '10px'
-  },
-  analysisBox: {
-    backgroundColor: '#334155',
-    padding: '12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    whiteSpace: 'pre-wrap' as const,
-    maxHeight: '250px',
-    overflowY: 'auto' as const,
-    lineHeight: 1.5
-  },
-  primaryButton: {
-    backgroundColor: '#3b82f6',
-    color: 'white',
-    borderColor: '#3b82f6'
-  },
-  smallButton: {
-    padding: '4px 8px',
     border: '1px solid #475569',
-    borderRadius: '3px',
-    backgroundColor: '#334155',
+    borderRadius: '12px',
+    fontSize: '18px',
+    fontWeight: '500',
     cursor: 'pointer',
-    fontSize: '10px',
     transition: 'all 0.2s',
-    color: '#e2e8f0'
+    textAlign: 'left',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    minHeight: '64px'
   },
-  actionGroupTitle: {
+  managementButtonHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c',
+    transform: 'translateY(-2px)'
+  },
+  timeTracking: {
+    backgroundColor: '#334155',
+    borderRadius: '16px',
+    padding: '24px',
+    marginBottom: '24px',
+    border: '1px solid #475569'
+  },
+  timeDisplay: {
+    fontSize: '40px',
+    fontWeight: '700',
+    color: '#3b82f6',
+    textAlign: 'center',
+    marginBottom: '20px',
+    fontFamily: 'monospace'
+  },
+  timeButtons: {
+    display: 'flex',
+    gap: '12px'
+  },
+  timeButton: {
+    flex: 1,
+    padding: '16px 20px',
+    backgroundColor: '#1e293b',
+    color: '#e2e8f0',
+    border: '1px solid #334155',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px'
+  },
+  timeButtonActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+    color: 'white'
+  },
+  timeButtonDanger: {
+    backgroundColor: '#dc2626',
+    borderColor: '#dc2626',
+    color: 'white'
+  },
+  timeStats: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+    marginTop: '16px'
+  },
+  timeStat: {
+    padding: '12px',
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    border: '1px solid #334155',
+    textAlign: 'center'
+  },
+  timeStatLabel: {
     fontSize: '12px',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
     fontWeight: '600',
-    color: '#cbd5e1',
-    marginBottom: '6px'
+    marginBottom: '4px'
   },
-  modal: {
-    position: 'fixed' as const,
+  timeStatValue: {
+    fontSize: '18px',
+    color: '#e2e8f0',
+    fontWeight: '600'
+  },
+  modalOverlay: {
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    background: 'rgba(0, 0, 0, 0.8)',
+    zIndex: 500,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000
+    padding: '20px'
   },
-  modalContent: {
-    backgroundColor: '#1e293b',
-    padding: '24px',
-    borderRadius: '8px',
-    width: '600px',
-    maxHeight: '80vh',
-    overflowY: 'auto' as const,
-    border: '1px solid #334155'
+  modalContainer: {
+    background: '#1e293b',
+    borderRadius: '20px',
+    border: '1px solid #334155',
+    width: '100%',
+    maxWidth: '900px',
+    maxHeight: '85vh',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)'
   },
   modalHeader: {
+    padding: '32px',
+    borderBottom: '1px solid #334155',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px'
+    alignItems: 'center'
   },
   modalTitle: {
-    fontSize: '18px',
-    fontWeight: '600'
+    fontSize: '24px',
+    fontWeight: '700',
+    color: '#e2e8f0'
   },
-  closeButton: {
-    backgroundColor: 'transparent',
+  modalClose: {
+    background: 'none',
     border: 'none',
     color: '#94a3b8',
+    fontSize: '32px',
     cursor: 'pointer',
-    fontSize: '20px'
+    padding: '12px',
+    borderRadius: '12px',
+    transition: 'all 0.2s'
   },
-  searchInput: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #475569',
-    borderRadius: '4px',
+  modalCloseHover: {
+    backgroundColor: '#334155',
+    color: '#e2e8f0'
+  },
+  modalContent: {
+    padding: '32px',
+    overflowY: 'auto',
+    flex: 1
+  },
+  modalGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gap: '20px'
+  },
+  modalButton: {
+    padding: '24px 32px',
     backgroundColor: '#334155',
     color: '#e2e8f0',
-    fontSize: '14px',
-    marginBottom: '16px'
+    border: '1px solid #475569',
+    borderRadius: '16px',
+    fontSize: '18px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    textAlign: 'left',
+    minHeight: '80px'
+  },
+  modalButtonHover: {
+    backgroundColor: '#3f4a5a',
+    borderColor: '#5a6b7c',
+    transform: 'translateY(-2px)'
+  },
+  modalButtonDescription: {
+    fontSize: '16px',
+    color: '#94a3b8',
+    marginTop: '8px'
+  },
+  formField: {
+    marginBottom: '24px'
+  },
+  formLabel: {
+    display: 'block',
+    marginBottom: '12px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    fontSize: '18px'
+  },
+  formInput: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    color: '#e2e8f0',
+    fontSize: '18px',
+    outline: 'none',
+    transition: 'all 0.2s'
+  },
+  formInputFocus: {
+    borderColor: '#3b82f6',
+    boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)'
+  },
+  formTextarea: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    color: '#e2e8f0',
+    fontSize: '18px',
+    resize: 'vertical',
+    outline: 'none',
+    minHeight: '120px',
+    lineHeight: '1.5',
+    transition: 'all 0.2s'
+  },
+  formSelect: {
+    width: '100%',
+    padding: '16px',
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    color: '#e2e8f0',
+    fontSize: '18px',
+    cursor: 'pointer',
+    outline: 'none',
+    transition: 'all 0.2s'
   },
   checkboxGroup: {
-    marginBottom: '20px'
+    display: 'flex',
+    gap: '20px',
+    flexWrap: 'wrap'
   },
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-    fontSize: '14px',
+    color: '#cbd5e1',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'color 0.2s'
+  },
+  checkboxLabelHover: {
+    color: '#e2e8f0'
+  },
+  checkbox: {
+    marginRight: '12px',
+    width: '20px',
+    height: '20px',
     cursor: 'pointer'
   },
-  searchResults: {
-    backgroundColor: '#334155',
-    padding: '16px',
-    borderRadius: '6px',
-    minHeight: '200px',
-    fontSize: '13px',
-    lineHeight: 1.5
+  radioGroup: {
+    display: 'flex',
+    gap: '20px',
+    flexWrap: 'wrap'
   },
-  draggableModal: {
-    position: 'absolute' as const,
-    backgroundColor: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: '8px',
-    minWidth: '700px',
-    minHeight: '500px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    cursor: 'move'
+  radioLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    color: '#cbd5e1',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'color 0.2s'
   },
-  modalTitleBar: {
-    padding: '12px 16px',
+  radio: {
+    marginRight: '12px',
+    width: '20px',
+    height: '20px',
+    cursor: 'pointer'
+  },
+  fileDropZone: {
+    border: '2px dashed #475569',
+    borderRadius: '12px',
+    padding: '32px',
+    textAlign: 'center',
     backgroundColor: '#334155',
-    borderBottom: '1px solid #475569',
-    borderRadius: '8px 8px 0 0',
+    transition: 'all 0.2s',
+    cursor: 'pointer'
+  },
+  fileDropZoneActive: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#1e40af',
+    transform: 'scale(1.02)'
+  },
+  fileDropZoneHover: {
+    borderColor: '#94a3b8',
+    backgroundColor: '#3f4a5a'
+  },
+  fileList: {
+    marginTop: '16px'
+  },
+  fileItem: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    cursor: 'move'
+    padding: '12px 16px',
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    border: '1px solid #334155'
   },
-  modalBody: {
-    padding: '16px',
-    height: 'calc(100% - 50px)',
-    overflow: 'auto'
+  fileName: {
+    color: '#cbd5e1',
+    fontSize: '16px'
+  },
+  fileSize: {
+    color: '#94a3b8',
+    fontSize: '14px'
+  },
+  removeButton: {
+    background: '#dc2626',
+    border: 'none',
+    color: 'white',
+    borderRadius: '6px',
+    padding: '6px 12px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.2s'
+  },
+  removeButtonHover: {
+    backgroundColor: '#b91c1c'
+  },
+  timerStoppedInfo: {
+    textAlign: 'center',
+    marginBottom: '32px',
+    padding: '24px',
+    backgroundColor: '#334155',
+    borderRadius: '12px',
+    border: '1px solid #475569'
+  },
+  timerStoppedTime: {
+    fontSize: '32px',
+    fontWeight: '700',
+    color: '#3b82f6',
+    marginBottom: '8px',
+    fontFamily: 'monospace'
+  },
+  timerStoppedSubtext: {
+    fontSize: '16px',
+    color: '#94a3b8'
+  },
+  modalActions: {
+    marginTop: '32px',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '16px',
+    paddingTop: '24px',
+    borderTop: '1px solid #334155'
+  },
+  buttonCancel: {
+    padding: '16px 24px',
+    backgroundColor: '#334155',
+    color: '#e2e8f0',
+    border: '1px solid #475569',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonPrimary: {
+    padding: '16px 24px',
+    backgroundColor: '#3b82f6',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonDanger: {
+    padding: '16px 24px',
+    backgroundColor: '#dc2626',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  buttonSuccess: {
+    padding: '16px 24px',
+    backgroundColor: '#16a34a',
+    color: 'white',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '16px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '60px 40px',
+    textAlign: 'center',
+    color: '#94a3b8'
+  },
+  emptyStateIcon: {
+    marginBottom: '20px',
+    color: '#475569'
+  },
+  emptyStateTitle: {
+    fontSize: '24px',
+    fontWeight: '600',
+    color: '#e2e8f0',
+    marginBottom: '12px'
+  },
+  emptyStateDescription: {
+    fontSize: '18px',
+    lineHeight: '1.6',
+    maxWidth: '400px'
   }
 };
 
-interface Ticket {
-  id: string;
-  summary: string;
-  company: { name: string };
-  status: { name: string };
-  priority: { name: string };
-  contact: { name: string; phone?: string; email?: string };
-  initialDescription: string;
-  dateEntered: string;
-  assignedEngineer?: string;
-}
+const engineers = ['Sarah Chen', 'Mike Johnson', 'Alex Rodriguez', 'Marcus Thompson', 'Jenny Williams', 'David Kim'];
+const statuses = ['All Statuses', 'New', 'Assigned', 'In Progress', 'Waiting', 'Escalated', 'Resolved'];
+const priorities = ['All Priorities', 'HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'];
+const employees = ['David Kim (Manager)', 'Marcus Thompson (L3)', 'Lisa Wang (Senior)', 'Frank Chen (L2)', 'Tom Rodriguez (L1)', 'Sarah Chen (L2)', 'Mike Johnson (L2)', 'Alex Rodriguez (L1)', 'Jenny Williams (L2)'];
 
-interface Note {
-  id: number;
-  author: string;
-  date: string;
-  text: string;
-}
-
-const mockTickets: Ticket[] = [
-  {
-    id: 'TF-2024-001523',
-    summary: 'Email server intermittently rejecting inbound messages',
-    company: { name: 'Meridian Financial Group' },
-    status: { name: 'In Progress' },
-    priority: { name: 'High' },
-    contact: { 
-      name: 'Michael Rodriguez',
-      phone: '(555) 123-4567',
-      email: 'michael.rodriguez@meridianfg.com'
-    },
-    initialDescription: 'Email server intermittently rejecting inbound messages from external senders. Users report missing important emails from clients and vendors. Issue started this morning around 9 AM EST.',
-    dateEntered: '2025-05-25T09:00:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001522',
-    summary: 'Critical network outage affecting main office',
-    company: { name: 'Apex Manufacturing' },
-    status: { name: 'Escalated' },
-    priority: { name: 'High' },
-    contact: { name: 'Jennifer Torres', phone: '(555) 987-6543' },
-    initialDescription: 'Complete network outage in main office building. 120+ users affected. Production systems down.',
-    dateEntered: '2025-05-25T07:30:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001521',
-    summary: 'Database server performance degradation',
-    company: { name: 'TechStart Solutions' },
-    status: { name: 'Escalated' },
-    priority: { name: 'High' },
-    contact: { name: 'Robert Kim' },
-    initialDescription: 'SQL Server responding slowly. Query timeouts occurring frequently. Business operations impacted.',
-    dateEntered: '2025-05-25T06:45:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001520',
-    summary: 'Ransomware detection on workstation',
-    company: { name: 'Legal Partners LLC' },
-    status: { name: 'Escalated' },
-    priority: { name: 'High' },
-    contact: { name: 'Patricia Wilson', phone: '(555) 555-0123' },
-    initialDescription: 'Antivirus detected ransomware attempt on accounting workstation. Isolated immediately.',
-    dateEntered: '2025-05-25T08:00:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001519',
-    summary: 'VPN connection dropping for remote users',
-    company: { name: 'Coastal Dental Partners' },
-    status: { name: 'New' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Sarah Kim' },
-    initialDescription: 'Multiple remote users reporting VPN disconnections every 30-45 minutes. Affecting productivity for remote staff.',
-    dateEntered: '2025-05-25T08:15:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001518',
-    summary: 'Request to install Adobe Creative Suite',
-    company: { name: 'Premier Legal Services' },
-    status: { name: 'Pending' },
-    priority: { name: 'Low' },
-    contact: { name: 'Jennifer Walsh' },
-    initialDescription: 'Request to install Adobe Creative Suite on 3 workstations for design work.',
-    dateEntered: '2025-05-24T14:30:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001517',
-    summary: 'Printer network connectivity issues',
-    company: { name: 'Green Valley Medical' },
-    status: { name: 'In Progress' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Dr. Lisa Park' },
-    initialDescription: 'Main office printer not responding. Network connectivity appears normal.',
-    dateEntered: '2025-05-24T16:20:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001516',
-    summary: 'Office 365 sync errors for multiple users',
-    company: { name: 'Financial Advisors Inc' },
-    status: { name: 'New' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Mark Thompson', email: 'mark@fainc.com' },
-    initialDescription: 'Several users unable to sync emails and calendar items with Office 365.',
-    dateEntered: '2025-05-24T10:15:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001515',
-    summary: 'Critical server backup failure - nightly job not completing',
-    company: { name: 'Metropolitan Insurance' },
-    status: { name: 'In Progress' },
-    priority: { name: 'High' },
-    contact: { name: 'David Chen' },
-    initialDescription: 'Nightly backup job failing for the past 3 nights. Critical data at risk. Backup logs show timeout errors.',
-    dateEntered: '2025-05-25T06:30:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001514',
-    summary: 'WiFi connectivity issues in conference rooms',
-    company: { name: 'Design Studio Pro' },
-    status: { name: 'Pending' },
-    priority: { name: 'Low' },
-    contact: { name: 'Amanda Foster' },
-    initialDescription: 'Intermittent WiFi drops in conference rooms during client presentations.',
-    dateEntered: '2025-05-24T09:30:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001513',
-    summary: 'Software licensing compliance audit request',
-    company: { name: 'Construction Partners' },
-    status: { name: 'New' },
-    priority: { name: 'Medium' },
-    contact: { name: 'James Miller', phone: '(555) 234-5678' },
-    initialDescription: 'Need comprehensive audit of all software licenses for compliance review.',
-    dateEntered: '2025-05-24T11:45:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001512',
-    summary: 'Firewall blocking legitimate business application',
-    company: { name: 'Retail Solutions LLC' },
-    status: { name: 'In Progress' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Karen Davis' },
-    initialDescription: 'New CRM application being blocked by firewall. Need to configure appropriate rules.',
-    dateEntered: '2025-05-24T13:20:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001511',
-    summary: 'Hard drive replacement for aging workstation',
-    company: { name: 'Accounting Plus' },
-    status: { name: 'Pending' },
-    priority: { name: 'Low' },
-    contact: { name: 'Steve Wilson' },
-    initialDescription: 'Workstation showing SMART errors. Proactive hard drive replacement needed.',
-    dateEntered: '2025-05-24T08:00:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001510',
-    summary: 'Email archive migration to new system',
-    company: { name: 'Healthcare Associates' },
-    status: { name: 'New' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Dr. Michelle Lee', email: 'mlee@healthcare.com' },
-    initialDescription: 'Need to migrate 5 years of email archives to new compliance system.',
-    dateEntered: '2025-05-23T15:30:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001509',
-    summary: 'User account lockout issues',
-    company: { name: 'Digital Marketing Pro' },
-    status: { name: 'In Progress' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Ryan Johnson' },
-    initialDescription: 'Multiple users experiencing frequent account lockouts. AD policies may need adjustment.',
-    dateEntered: '2025-05-23T14:15:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001508',
-    summary: 'New employee workstation setup',
-    company: { name: 'Consulting Group Elite' },
-    status: { name: 'Pending' },
-    priority: { name: 'Low' },
-    contact: { name: 'HR Department' },
-    initialDescription: 'Setup workstation and accounts for new hire starting Monday.',
-    dateEntered: '2025-05-23T12:00:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001507',
-    summary: 'SharePoint site permissions review',
-    company: { name: 'Real Estate Partners' },
-    status: { name: 'New' },
-    priority: { name: 'Low' },
-    contact: { name: 'Tony Garcia' },
-    initialDescription: 'Annual review and cleanup of SharePoint site permissions and access levels.',
-    dateEntered: '2025-05-23T10:45:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  },
-  {
-    id: 'TF-2024-001506',
-    summary: 'Phone system voicemail configuration',
-    company: { name: 'Insurance Brokers United' },
-    status: { name: 'In Progress' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Linda Brown', phone: '(555) 345-6789' },
-    initialDescription: 'Configure voicemail-to-email functionality for executive team.',
-    dateEntered: '2025-05-23T09:20:00Z',
-    assignedEngineer: 'Mike Johnson'
-  },
-  {
-    id: 'TF-2024-001505',
-    summary: 'Antivirus policy update deployment',
-    company: { name: 'Manufacturing Solutions' },
-    status: { name: 'Pending' },
-    priority: { name: 'Medium' },
-    contact: { name: 'Security Team' },
-    initialDescription: 'Deploy updated antivirus policies to all managed endpoints.',
-    dateEntered: '2025-05-23T08:30:00Z',
-    assignedEngineer: 'Sarah Chen'
-  },
-  {
-    id: 'TF-2024-001504',
-    summary: 'Cloud storage quota increase request',
-    company: { name: 'Architecture Firm Plus' },
-    status: { name: 'New' },
-    priority: { name: 'Low' },
-    contact: { name: 'Project Manager' },
-    initialDescription: 'OneDrive storage approaching limit. Need to increase quota for design team.',
-    dateEntered: '2025-05-22T16:45:00Z',
-    assignedEngineer: 'Alex Rodriguez'
-  }
-];
-
-const MSPPortal: React.FC = () => {
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(mockTickets[0]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('client');
-  const [sortFilter, setSortFilter] = useState('');
-  const [activeTab, setActiveTab] = useState('my-open');
-  const [isTimerRunning, setIsTimerRunning] = useState(true);
-  const [timerDisplay, setTimerDisplay] = useState('02:15:30');
-  const [noteText, setNoteText] = useState('');
-  const [noteType, setNoteType] = useState('Internal Note');
-  const [analysisText, setAnalysisText] = useState('');
-  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+const ImprovedEngineerApp = () => {
+  const { tickets, loading, error, lastUpdated, refreshTickets } = useTickets();
+  
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [activeFilter, setActiveFilter] = useState('My Open');
+  const [selectedEngineer, setSelectedEngineer] = useState('All Engineers');
+  const [selectedClient, setSelectedClient] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('All Statuses');
+  const [selectedPriority, setSelectedPriority] = useState('All Priorities');
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchSources, setSearchSources] = useState({
-    historicalTickets: true,
-    clientDocumentation: true,
-    sharepoint: false,
-    externalSources: false
+  const [expandedTickets, setExpandedTickets] = useState<Set<string>>(new Set());
+  const [showNotes, setShowNotes] = useState(false);
+  const [showTakeActionModal, setShowTakeActionModal] = useState(false);
+  const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [timerSeconds, setTimerSeconds] = useState(8142); // 02:15:42
+  const [aiAnalysisResult, setAiAnalysisResult] = useState('');
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionModalType, setActionModalType] = useState('');
+  const [ticketSummaryContent, setTicketSummaryContent] = useState('');
+  const [activeAiButton, setActiveAiButton] = useState('');
+  
+  // Quick filter states
+  const [quickFilters, setQuickFilters] = useState({
+    highPriority: false,
+    myTickets: false,
+    newTickets: false,
+    overdue: false
   });
+  
+  // Form states
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [timerNotes, setTimerNotes] = useState('');
+  const [noteType, setNoteType] = useState('public');
+  const [addToKnowledgeBase, setAddToKnowledgeBase] = useState(false);
+  const [timerStatusChange, setTimerStatusChange] = useState('');
+  const [searchKeywords, setSearchKeywords] = useState('');
+  const [searchHistoricalTickets, setSearchHistoricalTickets] = useState(true);
+  const [searchITGlue, setSearchITGlue] = useState(false);
+  const [searchSharePoint, setSearchSharePoint] = useState(false);
+  const [searchVendorSupport, setSearchVendorSupport] = useState(false);
   const [searchResults, setSearchResults] = useState('');
-  const [analysisWindows, setAnalysisWindows] = useState<Array<{id: string, title: string, content: string, position: {x: number, y: number}}>>([]);
-  const [dragState, setDragState] = useState<{isDragging: boolean, windowId: string | null, offset: {x: number, y: number}}>({
-    isDragging: false,
-    windowId: null,
-    offset: { x: 0, y: 0 }
-  });
-  const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [tempPriority, setTempPriority] = useState('');
-  const [tempStatus, setTempStatus] = useState('');
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showWatchersModal, setShowWatchersModal] = useState(false);
-  const [showEscalationModal, setShowEscalationModal] = useState(false);
-  const [assignAction, setAssignAction] = useState('assign');
-  const [selectedEngineer, setSelectedEngineer] = useState('');
-  const [watcherType, setWatcherType] = useState('internal');
-  const [selectedWatcher, setSelectedWatcher] = useState('');
-  const [escalationSettings, setEscalationSettings] = useState({
-    changeStatus: true,
-    notifyManager: false,
-    notifyExecutive: false
-  });
+  const [timeHours, setTimeHours] = useState('');
+  const [timeMinutes, setTimeMinutes] = useState('');
+  const [workDescription, setWorkDescription] = useState('');
+  const [timeEntryNoteType, setTimeEntryNoteType] = useState('public');
+  const [assigneeSelection, setAssigneeSelection] = useState('');
+  const [isAssignTicket, setIsAssignTicket] = useState(true);
+  const [escalationReason, setEscalationReason] = useState('');
+  const [escalateToManager, setEscalateToManager] = useState(false);
+  const [escalateToExecutive, setEscalateToExecutive] = useState(false);
+  const [escalateViaEmail, setEscalateViaEmail] = useState(true);
+  const [escalateViaTeams, setEscalateViaTeams] = useState(false);
+  const [escalateViaSMS, setEscalateViaSMS] = useState(false);
+  const [aiDraftText, setAiDraftText] = useState('');
+  const [sendEmail, setSendEmail] = useState(true);
+  const [sendTextMessage, setSendTextMessage] = useState(false);
+  const [internalWatcher, setInternalWatcher] = useState('');
+  const [externalWatcherEmail, setExternalWatcherEmail] = useState('');
+  const [shareUpdateStaff, setShareUpdateStaff] = useState('');
+  const [shareUpdateNotes, setShareUpdateNotes] = useState('');
+  const [shareViaEmail, setShareViaEmail] = useState(true);
+  const [shareViaTeams, setShareViaTeams] = useState(false);
+  const [shareViaSMS, setShareViaSMS] = useState(false);
 
-  const [customerPOCs] = useState<{[key: string]: {name: string, phone?: string, email?: string, title?: string}}>({
-    'TF-2024-001523': { name: 'David Rodriguez', phone: '(555) 123-4500', email: 'david.rodriguez@meridianfg.com', title: 'IT Director' },
-    'TF-2024-001522': { name: 'Jennifer Torres', phone: '(555) 987-6500', email: 'j.torres@apexmfg.com', title: 'Operations Manager' },
-    'TF-2024-001521': { name: 'Robert Kim', phone: '(555) 456-7890', email: 'rkim@techstart.com', title: 'CTO' },
-    'TF-2024-001520': { name: 'Patricia Wilson', phone: '(555) 555-0100', email: 'pwilson@legalpartners.com', title: 'Managing Partner' },
-    'TF-2024-001519': { name: 'Dr. Mark Stevens', phone: '(555) 789-0123', email: 'mstevens@coastaldental.com', title: 'Practice Manager' },
-    'TF-2024-001518': { name: 'Jennifer Walsh', phone: '(555) 234-5670', email: 'jwalsh@premierlegal.com', title: 'Office Manager' }
-  });
-
-  const [lastNotes] = useState<Note[]>([
-    {
-      id: 1,
-      author: 'Sarah Chen',
-      date: '2h 15m ago',
-      text: 'Initial diagnosis started. Checking Exchange message queue and SMTP connectors. Will update in 30 minutes.'
-    },
-    {
-      id: 2,
-      author: 'Michael Rodriguez',
-      date: '45m ago',
-      text: 'Client confirms issue affects emails from @vendor1.com and @supplier2.com specifically. No issues with internal emails.'
-    },
-    {
-      id: 3,
-      author: 'Sarah Chen',
-      date: '30m ago',
-      text: 'Found suspicious entries in receive connector logs. Investigating IP restriction policies and authentication settings.'
-    },
-    {
-      id: 4,
-      author: 'System',
-      date: '15m ago',
-      text: 'Ticket priority escalated to High due to business impact. SLA timer: 4h 45m remaining.'
+  // Timer effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => prev + 1);
+      }, 1000);
     }
-  ]);
-
-  const openAnalysisWindow = (content: string) => {
-    const newWindow = {
-      id: Date.now().toString(),
-      title: 'Analysis Results',
-      content: content,
-      position: { x: 100 + (analysisWindows.length * 30), y: 100 + (analysisWindows.length * 30) }
-    };
-    setAnalysisWindows(prev => [...prev, newWindow]);
-  };
-
-  const closeAnalysisWindow = (id: string) => {
-    setAnalysisWindows(prev => prev.filter(window => window.id !== id));
-  };
-
-  const handleMouseDown = (e: React.MouseEvent, windowId: string) => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setDragState({
-      isDragging: true,
-      windowId,
-      offset: {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      }
-    });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (dragState.isDragging && dragState.windowId) {
-      const newX = e.clientX - dragState.offset.x;
-      const newY = e.clientY - dragState.offset.y;
-      
-      setAnalysisWindows(prev => 
-        prev.map(window => 
-          window.id === dragState.windowId 
-            ? { ...window, position: { x: newX, y: newY } }
-            : window
-        )
-      );
-    }
-  };
-
-  const handleMouseUp = () => {
-    setDragState({
-      isDragging: false,
-      windowId: null,
-      offset: { x: 0, y: 0 }
-    });
-  };
-
-  const handleUpdatePriorityStatus = () => {
-    if (selectedTicket) {
-      setTempPriority(selectedTicket.priority.name);
-      setTempStatus(selectedTicket.status.name);
-      setShowUpdateModal(true);
-    }
-  };
-
-  const handleAssignTeammate = () => {
-    setAssignAction('assign');
-    setSelectedEngineer('');
-    setShowAssignModal(true);
-  };
-
-  const handleAddWatchers = () => {
-    setWatcherType('internal');
-    setSelectedWatcher('');
-    setShowWatchersModal(true);
-  };
-
-  const handleEscalation = () => {
-    setEscalationSettings({
-      changeStatus: true,
-      notifyManager: false,
-      notifyExecutive: false
-    });
-    setShowEscalationModal(true);
-  };
-
-  const saveAssignment = () => {
-    console.log('Assignment:', assignAction, 'Engineer:', selectedEngineer);
-    setShowAssignModal(false);
-  };
-
-  const saveWatchers = () => {
-    console.log('Watcher type:', watcherType, 'Selected:', selectedWatcher);
-    setShowWatchersModal(false);
-  };
-
-  const saveEscalation = () => {
-    console.log('Escalation settings:', escalationSettings);
-    setShowEscalationModal(false);
-  };
-
-  const saveUpdates = () => {
-    console.log('Updating ticket:', selectedTicket?.id, 'Priority:', tempPriority, 'Status:', tempStatus);
-    setShowUpdateModal(false);
-  };
-
-  useEffect(() => {
-    if (!isTimerRunning) return;
-    
-    const interval = setInterval(() => {
-      setTimerDisplay(prev => {
-        const [hours, minutes, seconds] = prev.split(':').map(Number);
-        const totalSeconds = hours * 3600 + minutes * 60 + seconds + 1;
-        const newHours = Math.floor(totalSeconds / 3600);
-        const newMinutes = Math.floor((totalSeconds % 3600) / 60);
-        const newSecs = totalSeconds % 60;
-        return `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}:${newSecs.toString().padStart(2, '0')}`;
-      });
-    }, 1000);
-
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
+  // Format timer display
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Set initial selected ticket when tickets load
+  React.useEffect(() => {
+    if (tickets.length > 0 && !selectedTicket) {
+      setSelectedTicket(tickets[0]);
+    }
+  }, [tickets, selectedTicket]);
+
+  // Enhanced filtering with live data
+  const filteredTickets = tickets.filter(ticket => {
+    // Search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const assignee = safeString(ticket.assignee).toLowerCase();
+      const title = safeString(ticket.title).toLowerCase();
+      const company = safeString(ticket.company).toLowerCase();
+      const id = safeString(ticket.id).toLowerCase();
+      
+      if (!assignee.includes(query) &&
+          !title.includes(query) &&
+          !company.includes(query) &&
+          !id.includes(query)) {
+        return false;
+      }
+    }
     
-    if (diffDays > 0) return `${diffDays}d ${diffHours % 24}h ago`;
-    if (diffHours > 0) return `${diffHours}h ${Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))}m ago`;
-    return 'Recent';
+    // Quick filters
+    const priority = safePriority(ticket.priority);
+    if (quickFilters.highPriority && priority !== 'HIGH' && priority !== 'NEEDS_ATTENTION') {
+      return false;
+    }
+    if (quickFilters.myTickets && safeString(ticket.assignee) !== 'Sarah Chen') {
+      return false;
+    }
+    if (quickFilters.newTickets && safeStatus(ticket.status) !== 'New') {
+      return false;
+    }
+    if (quickFilters.overdue) {
+      // Simple overdue logic - tickets older than 2 days
+      const timeStr = safeString(ticket.time);
+      const ticketHours = parseInt(timeStr);
+      if (isNaN(ticketHours) || ticketHours < 48) {
+        return false;
+      }
+    }
+    
+    // Standard filters
+    if (selectedEngineer !== 'All Engineers' && safeString(ticket.assignee) !== selectedEngineer) {
+      return false;
+    }
+    if (selectedClient && !safeString(ticket.company).toLowerCase().includes(selectedClient.toLowerCase())) {
+      return false;
+    }
+    if (selectedStatus !== 'All Statuses' && safeStatus(ticket.status) !== selectedStatus) {
+      return false;
+    }
+    if (selectedPriority !== 'All Priorities' && safePriority(ticket.priority) !== selectedPriority) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  const toggleTicketExpansion = (ticketId: string) => {
+    const newExpanded = new Set(expandedTickets);
+    if (newExpanded.has(ticketId)) {
+      newExpanded.delete(ticketId);
+    } else {
+      newExpanded.add(ticketId);
+    }
+    setExpandedTickets(newExpanded);
+  };
+
+  const toggleQuickFilter = (filter: keyof typeof quickFilters) => {
+    setQuickFilters(prev => ({
+      ...prev,
+      [filter]: !prev[filter]
+    }));
   };
 
   const getPriorityStyle = (priority: string) => {
-    switch (priority.toLowerCase()) {
-      case 'high': return { ...styles.priority, ...styles.priorityHigh };
-      case 'medium': return { ...styles.priority, ...styles.priorityMedium };
-      case 'low': return { ...styles.priority, ...styles.priorityLow };
-      default: return styles.priority;
+    const safePrio = safePriority(priority);
+    switch(safePrio) {
+      case 'HIGH': return styles.priorityHigh;
+      case 'MEDIUM': return styles.priorityMedium;
+      case 'LOW': return styles.priorityLow;
+      case 'NEEDS_ATTENTION': return styles.priorityNeedsAttention;
+      default: return styles.priorityMedium;
     }
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status.toLowerCase().replace(' ', '-')) {
-      case 'new': return { ...styles.status, ...styles.statusNew };
-      case 'in-progress': return { ...styles.status, ...styles.statusInProgress };
-      case 'pending': return { ...styles.status, ...styles.statusPending };
-      case 'escalated': return { ...styles.status, ...styles.statusEscalated };
-      default: return styles.status;
+  const getPriorityIcon = (priority: string) => {
+    const safePrio = safePriority(priority);
+    switch(safePrio) {
+      case 'HIGH': return <AlertTriangle size={16} />;
+      case 'NEEDS_ATTENTION': return <Flag size={16} />;
+      case 'MEDIUM': return <Circle size={16} />;
+      case 'LOW': return <Minus size={16} />;
+      default: return <Circle size={16} />;
     }
   };
 
-  const getTicketBackgroundStyle = (ticket: Ticket) => {
-    if (ticket.status.name === 'Escalated') {
-      return styles.ticketEscalated;
+  const getPriorityText = (priority: any) => {
+    const safePrio = safePriority(priority);
+    if (safePrio === 'NEEDS_ATTENTION') return 'Needs Attention';
+    return safePrio;
+  };
+
+  const getStatusStyle = (status: any) => {
+    const safeStatusValue = safeStatus(status);
+    switch(safeStatusValue) {
+      case 'New': return styles.statusNew;
+      case 'Assigned': return styles.statusAssigned;
+      case 'In Progress': return styles.statusInProgress;
+      case 'Waiting': return styles.statusWaiting;
+      case 'Escalated': return styles.statusEscalated;
+      case 'Resolved': return styles.statusResolved;
+      default: return styles.statusNew;
     }
+  };
+
+  const getStatusIcon = (status: any) => {
+    const safeStatusValue = safeStatus(status);
+    switch(safeStatusValue) {
+      case 'New': return <Circle size={12} />;
+      case 'Assigned': return <User size={12} />;
+      case 'In Progress': return <Play size={12} />;
+      case 'Waiting': return <Clock size={12} />;
+      case 'Escalated': return <AlertTriangle size={12} />;
+      case 'Resolved': return <CheckCircle size={12} />;
+      default: return <Circle size={12} />;
+    }
+  };
+
+  const formatTimeAgo = (timeString: any) => {
+    const timeStr = safeString(timeString);
+    if (!timeStr) return 'Unknown';
     
-    switch (ticket.priority.name.toLowerCase()) {
-      case 'high':
-        return styles.ticketHighPriority;
-      case 'medium':
-        return styles.ticketMediumPriority;
-      default:
-        return {};
-    }
-  };
-
-  const getSortOptions = () => {
-    switch (sortBy) {
-      case 'client':
-        return [
-          { value: '', label: 'All Clients' },
-          { value: 'meridian', label: 'Meridian Financial Group' },
-          { value: 'coastal', label: 'Coastal Dental Partners' },
-          { value: 'premier', label: 'Premier Legal Services' },
-          { value: 'metro', label: 'Metropolitan Insurance' }
-        ];
-      case 'engineer':
-        return [
-          { value: '', label: 'All Engineers' },
-          { value: 'sarah', label: 'Sarah Chen' },
-          { value: 'mike', label: 'Mike Johnson' },
-          { value: 'alex', label: 'Alex Rodriguez' }
-        ];
-      case 'priority':
-        return [
-          { value: '', label: 'All Priorities' },
-          { value: 'high', label: 'High' },
-          { value: 'medium', label: 'Medium' },
-          { value: 'low', label: 'Low' }
-        ];
-      case 'status':
-        return [
-          { value: '', label: 'All Statuses' },
-          { value: 'new', label: 'New' },
-          { value: 'in-progress', label: 'In Progress' },
-          { value: 'pending', label: 'Pending' },
-          { value: 'escalated', label: 'Escalated' }
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const getPriorityWeight = (priority: string): number => {
-    switch (priority.toLowerCase()) {
-      case 'high': return 3;
-      case 'medium': return 2;
-      case 'low': return 1;
-      default: return 0;
-    }
-  };
-
-  const getStatusWeight = (status: string): number => {
-    if (status.toLowerCase() === 'escalated') return 100;
-    return 0;
-  };
-
-  const filteredTickets = mockTickets
-    .filter(ticket => {
-      const matchesSearch = ticket.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           ticket.company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (!sortFilter) return matchesSearch;
-      
-      switch (sortBy) {
-        case 'client':
-          return matchesSearch && ticket.company.name.toLowerCase().includes(sortFilter);
-        case 'priority':
-          return matchesSearch && ticket.priority.name.toLowerCase() === sortFilter;
-        case 'status':
-          return matchesSearch && ticket.status.name.toLowerCase().replace(' ', '-') === sortFilter;
-        default:
-          return matchesSearch;
+    if (timeStr.includes('h')) {
+      const hours = parseInt(timeStr);
+      if (hours >= 24) {
+        const days = Math.floor(hours / 24);
+        return `${days} day${days > 1 ? 's' : ''} ago`;
       }
-    })
-    .sort((a, b) => {
-      const statusDiff = getStatusWeight(b.status.name) - getStatusWeight(a.status.name);
-      if (statusDiff !== 0) return statusDiff;
-      
-      const priorityDiff = getPriorityWeight(b.priority.name) - getPriorityWeight(a.priority.name);
-      if (priorityDiff !== 0) return priorityDiff;
-      
-      return new Date(b.dateEntered).getTime() - new Date(a.dateEntered).getTime();
-    });
-
-  const showClientEnvironment = () => {
-    setAnalysisText(`CLIENT ENVIRONMENT - ${selectedTicket?.company.name}
-
-Infrastructure Overview:
-• 45 Active Users
-• 2 Office Locations  
-• 52 Managed Devices
-• Exchange 2019 Email Server
-• Windows Server 2019 Domain Controller
-
-Key Applications:
-• QuickBooks Enterprise 2024
-• Microsoft 365 Business Premium
-• Sage CRM Professional
-• DocuSign Business Pro
-
-Recent Issues (Last 30 Days):
-• Email delivery delays (3 tickets)
-• VPN connectivity issues (2 tickets)
-• Backup verification failures (1 ticket)
-
-Key Contacts:
-• IT Manager: Michael Rodriguez
-• Office Manager: Sarah Kim
-• CEO: David Chen`);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    }
+    if (timeStr.includes('min') || timeStr.includes('m')) {
+      const minutes = parseInt(timeStr);
+      if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      }
+      return timeStr;
+    }
+    return timeStr;
   };
 
-  const handleEnterpriseSearch = () => {
-    if (!searchQuery.trim()) return;
-    
-    let results = `ENTERPRISE SEARCH RESULTS\nQuery: "${searchQuery}"\n\n`;
-    
-    if (searchSources.historicalTickets) {
-      results += `HISTORICAL TICKETS:\n`;
-      results += `✓ #TF-2024-001324 - Similar Issue (Resolved)\n`;
-      results += `  Client: Meridian Financial Group\n`;
-      results += `  Resolution: Exchange server rejecting emails due to recipient policy misconfiguration.\n\n`;
-    }
-    
-    if (searchSources.clientDocumentation) {
-      results += `CLIENT DOCUMENTATION:\n`;
-      results += `✓ Exchange Configuration Guide\n`;
-      results += `✓ Network Topology Diagram\n`;
-      results += `✓ Backup Procedures Manual\n\n`;
-    }
-    
-    if (searchSources.sharepoint) {
-      results += `SHAREPOINT DOCUMENTS:\n`;
-      results += `✓ IT Policies and Procedures\n`;
-      results += `✓ Change Management Process\n\n`;
-    }
-    
-    if (searchSources.externalSources) {
-      results += `EXTERNAL SOURCES:\n`;
-      results += `✓ Microsoft TechNet Articles\n`;
-      results += `✓ Vendor Documentation\n\n`;
-    }
-    
-    setSearchResults(results);
-    setAnalysisText(results);
-    setShowEnterpriseModal(false);
+  const handleTicketSelect = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setExpandedTickets(new Set());
+    setShowNotes(false);
+    setAiAnalysisResult('');
+    setTicketSummaryContent('');
+    setSearchResults('');
+    setActiveAiButton('');
   };
 
-  const showAIActions = () => {
-    setAnalysisText(`AI-SUGGESTED ACTIONS
+  const handleAiAction = (action: string) => {
+    if (!selectedTicket) return;
 
-High Confidence Suggestions:
+    setActiveAiButton(action);
+    
+    switch(action) {
+      case 'environment':
+        const contact = safeContact(selectedTicket.contact);
+        setAiAnalysisResult(`🏢 Client Environment - ${safeString(selectedTicket.company)}:
+        
+📊 Environment Overview:
+• Company: ${safeString(selectedTicket.company)}
+• Contact: ${contact.name}
+• Phone: ${contact.phone}
+• Email: ${contact.email}
+• Current Assignee: ${safeString(selectedTicket.assignee)}
 
-1. Check Exchange Message Queue
-   Confidence: 92%
-   Based on similar resolved tickets, intermittent rejection often indicates queue issues. Check for backed-up messages or transport rule conflicts.
+🔍 Current Ticket Details:
+• Ticket ID: ${safeString(selectedTicket.id)}
+• Priority: ${getPriorityText(selectedTicket.priority)}
+• Status: ${safeStatus(selectedTicket.status)}
+• Created: ${safeString(selectedTicket.time)}
+• Board: ${safeString(selectedTicket.board) || 'Service Board'}
+• Type: ${safeString(selectedTicket.type) || 'Service Request'}
 
-2. Review SMTP Receive Connector Logs  
-   Confidence: 87%
-   Pattern analysis suggests receive connector authentication or IP restrictions may be causing selective rejections.
+💻 Technical Information:
+• Severity: ${safeString(selectedTicket.severity) || 'Medium'}
+• Impact: ${safeString(selectedTicket.impact) || 'Medium'}  
+• Urgency: ${safeString(selectedTicket.urgency) || 'Medium'}
 
-3. Verify Anti-Spam Filter Settings
-   Confidence: 78%
-   Recent updates to spam filtering rules may be incorrectly flagging legitimate external emails. Review whitelist and SCL thresholds.
+📋 ConnectWise Integration:
+✅ Live data from ConnectWise API
+✅ Real-time updates every 30 seconds
+✅ Full ticket synchronization active`);
+        break;
+        
+      case 'knowledge':
+        setActionModalType('Enterprise Knowledge Search');
+        setShowActionModal(true);
+        break;
+        
+      case 'actions':
+        const title = safeString(selectedTicket.title);
+        const actionPlan = `⚡ AI Generated Action Plan for Ticket #${safeString(selectedTicket.id)}:
 
-Why these suggestions? AI analysis of 247 similar tickets shows 94% resolution rate when following this sequence. Current ticket symptoms match pattern cluster #7.`);
+🎯 Issue: ${title}
+🏢 Client: ${safeString(selectedTicket.company)}
+⚡ Priority: ${getPriorityText(selectedTicket.priority)}
+
+🔍 Analysis:
+${title.toLowerCase().includes('smart') || title.toLowerCase().includes('drive') ?
+  '• Hardware failure detected - SMART errors indicate imminent drive failure\n• Immediate backup and replacement required\n• Estimated downtime: 1-2 hours' :
+  title.toLowerCase().includes('network') || title.toLowerCase().includes('outage') ?
+  '• Network connectivity issue affecting multiple users\n• Check network infrastructure and ISP connectivity\n• Estimated resolution: 2-4 hours' :
+  title.toLowerCase().includes('email') || title.toLowerCase().includes('exchange') ?
+  '• Email system configuration issue\n• Check Exchange connectors and mail flow\n• Estimated resolution: 30-60 minutes' :
+  '• Standard service request\n• Follow established procedures\n• Estimated resolution: 1-2 hours'}
+
+🛠️ Recommended Actions:
+1. Contact client to confirm issue details
+2. Remote into affected system(s)
+3. Perform diagnostic assessment
+4. Implement solution with minimal downtime
+5. Test functionality and confirm resolution
+6. Document solution in knowledge base
+
+⏱️ Next Steps:
+• Update ticket status to "In Progress"
+• Contact ${safeContact(selectedTicket.contact).name} at ${safeContact(selectedTicket.contact).phone}
+• Schedule maintenance window if required
+• Follow up within 24 hours`;
+        
+        setAiAnalysisResult(actionPlan);
+        break;
+        
+      case 'summary':
+        const summaryContact = safeContact(selectedTicket.contact);
+        setTicketSummaryContent(`📋 ConnectWise Ticket Summary - #${safeString(selectedTicket.id)}
+
+🎯 Issue Overview:
+${safeString(selectedTicket.title)}
+
+🏢 Client Information:
+• Company: ${safeString(selectedTicket.company)}
+• Contact: ${summaryContact.name}
+• Phone: ${summaryContact.phone}
+• Email: ${summaryContact.email}
+
+📊 Ticket Details:
+• Priority: ${getPriorityText(selectedTicket.priority)}
+• Status: ${safeStatus(selectedTicket.status)}
+• Assignee: ${safeString(selectedTicket.assignee)}
+• Created: ${safeString(selectedTicket.time)}
+• Board: ${safeString(selectedTicket.board) || 'Service Board'}
+• Type: ${safeString(selectedTicket.type) || 'Service Request'}
+
+🔧 Technical Classification:
+• Severity: ${safeString(selectedTicket.severity) || 'Medium'}
+• Impact: ${safeString(selectedTicket.impact) || 'Medium'}
+• Urgency: ${safeString(selectedTicket.urgency) || 'Medium'}
+
+💼 Business Impact:
+${safePriority(selectedTicket.priority) === 'HIGH' || safePriority(selectedTicket.priority) === 'NEEDS_ATTENTION' ?
+  '• High priority - critical business operations may be affected\n• Immediate attention required' :
+  safePriority(selectedTicket.priority) === 'MEDIUM' ?
+  '• Medium priority - normal business impact\n• Standard response time applies' :
+  '• Low priority - minimal business impact\n• Can be scheduled during normal business hours'}
+
+📝 Description:
+${safeString(selectedTicket.description) || 'No detailed description available'}
+
+🔗 ConnectWise Integration:
+✅ Live sync with ConnectWise system
+✅ Real-time status updates
+✅ Automated workflow triggers`);
+        break;
+    }
   };
 
-  const showTicketSummary = () => {
-    setAnalysisText(`**AI TICKET SUMMARY & ANALYSIS**
+  const handleTakeAction = (action: string) => {
+    setShowTakeActionModal(false);
+    
+    switch(action) {
+      case 'AI Draft Response':
+        setActionModalType('AI Draft Response');
+        const contact = safeContact(selectedTicket?.contact);
+        setAiDraftText(`Dear ${contact.name || 'Client'},
 
-⚠️ TICKET NEEDS ATTENTION
-Overall Assessment: High priority ticket with potential SLA risk. Similar issues took average 4.2 hours to resolve. Current time elapsed: 2h 15m.
+Thank you for reporting the issue. I've identified the root cause and am implementing a solution.
 
-AI Analysis by Category:
-✓ Tech Skills: On track - following proper diagnostic procedures
-⚠️ Sentiment: Client frustration detected in recent communications  
-🚨 Cadence: Last update 2h 15m ago - exceeds recommended 1h interval
-✓ Empathy: Good - acknowledging business impact appropriately
-🚨 Disruption: High business impact - email system critical for operations
-⚠️ Clarity: Need more specific details about affected domains
+Issue Summary:
+${safeString(selectedTicket?.title) || 'Service Request'}
 
-Current Situation Summary:
-Meridian Financial Group experiencing intermittent email delivery failures since 9 AM EST. Issue affects inbound messages from external senders, impacting business-critical communications.
+Resolution Plan:
+1. Initial assessment and diagnosis (In Progress)
+2. Implement recommended solution (Next - 15-30 min)
+3. Test and verify functionality (Final - 10-15 min)
 
-Actions Taken So Far:
-• Initial diagnosis started at 10:30 AM
-• Client contacted for additional details
-• Timer active - 2h 15m elapsed
-
-Outstanding Questions:
-• Which external domains are being rejected?
-• Are error messages logged in Exchange?
-• Has recent configuration changed?`);
-  };
-
-  const generateAIDraft = () => {
-    const aiDraftText = `Hi ${selectedTicket?.contact.name},
-
-Thank you for reporting the email delivery issue. I've begun investigating the intermittent rejection of inbound messages on your Exchange server.
-
-Based on my initial analysis, this appears to be related to either message queue processing or SMTP receive connector configuration. I'm currently:
-
-• Reviewing the Exchange message queue for any backed-up or stuck messages
-• Checking SMTP receive connector logs for authentication or IP restriction issues  
-• Verifying anti-spam filter settings to ensure legitimate emails aren't being blocked
-
-I estimate this will take approximately 1-2 hours to fully diagnose and resolve. I'll keep you updated every 30 minutes with my progress.
-
-In the meantime, please let me know:
-1. Are there specific external domains that seem to be affected more than others?
-2. Have you noticed any error messages when sending test emails?
-
-I'll have this resolved as quickly as possible to minimize impact on your business communications.
+Expected Resolution: Within ${safeString(selectedTicket?.title)?.toLowerCase().includes('smart') ? '2-3 hours' : safeString(selectedTicket?.title)?.toLowerCase().includes('ransomware') ? '6-8 hours' : safeString(selectedTicket?.title)?.toLowerCase().includes('network') ? '2-6 hours' : '45 minutes'}
+I'll send an update once testing is complete.
 
 Best regards,
-Sarah Chen
-TechFlow MSP - L2 Support Engineer`;
-
-    setNoteText(aiDraftText);
+Sarah Chen - L2 Support Engineer
+TechFlow MSP`);
+        setShowActionModal(true);
+        break;
+      case 'Attach Files':
+        setActionModalType('Attach Files');
+        setSelectedFiles([]);
+        setShowActionModal(true);
+        break;
+      case 'Change Status':
+        setActionModalType('Change Status');
+        setTimerStatusChange(safeStatus(selectedTicket?.status) || '');
+        setTimerNotes('');
+        setNoteType('public');
+        setShowActionModal(true);
+        break;
+      case 'Stop Timer':
+        setIsTimerRunning(false);
+        setActionModalType('Stop Timer & Add Notes');
+        setTimerNotes('');
+        setNoteType('public');
+        setAddToKnowledgeBase(false);
+        setTimerStatusChange('');
+        setShowActionModal(true);
+        break;
+      case 'Manual Time Entry':
+        setActionModalType('Manual Time Entry');
+        setTimeHours('');
+        setTimeMinutes('');
+        setWorkDescription('');
+        setTimeEntryNoteType('public');
+        setShowActionModal(true);
+        break;
+      case 'Share Update':
+        setActionModalType('Share Update');
+        setShareUpdateStaff('');
+        setShareUpdateNotes('');
+        setShareViaEmail(true);
+        setShareViaTeams(false);
+        setShareViaSMS(false);
+        setShowActionModal(true);
+        break;
+    }
   };
 
-  return (
-    <div 
-      style={styles.container}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-    >
-      <div style={styles.header}>
-        {!isLeftPanelVisible && (
-          <button
-            onClick={() => setIsLeftPanelVisible(true)}
-            style={styles.headerToggle}
-            title="Show ticket list"
-          >
-            ▶
-          </button>
-        )}
-        <div style={{
-          ...styles.headerContent,
-          ...(!isLeftPanelVisible ? styles.headerContentShifted : {})
-        }}>
-          <div style={styles.headerTitle}>TechFlow MSP - UPDATED</div>
-          <div style={styles.headerSubtitle}>Sarah Chen - L2 Support Engineer</div>
-          <div style={styles.stats}>
-            <div style={styles.stat}>Assigned: 8</div>
-            <div style={styles.stat}>Open: 12</div>
-            <div style={styles.stat}>SLA: 2</div>
+  const handleQuickAction = (action: string) => {
+    switch(action) {
+      case 'assign':
+        setActionModalType('Assign/Add Teammate');
+        setAssigneeSelection('');
+        setIsAssignTicket(true);
+        setShowActionModal(true);
+        break;
+      case 'watchers':
+        setActionModalType('Add Watchers');
+        setInternalWatcher('');
+        setExternalWatcherEmail('');
+        setShowActionModal(true);
+        break;
+      case 'escalate':
+        setActionModalType('Request Escalation');
+        setEscalationReason('');
+        setEscalateToManager(false);
+        setEscalateToExecutive(false);
+        setEscalateViaEmail(true);
+        setEscalateViaTeams(false);
+        setEscalateViaSMS(false);
+        setShowActionModal(true);
+        break;
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setSelectedFiles(Array.from(event.target.files));
+    }
+  };
+
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.files) {
+      setSelectedFiles(Array.from(event.dataTransfer.files));
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(files => files.filter((_, i) => i !== index));
+  };
+
+  const handlePasteScreenshot = async () => {
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            const blob = await clipboardItem.getType(type);
+            const file = new File([blob], `screenshot-${Date.now()}.png`, { type });
+            setSelectedFiles(prev => [...prev, file]);
+            break;
+          }
+        }
+      }
+    } catch (err) {
+      console.log('Clipboard access not available');
+    }
+  };
+
+  const isTicketExpanded = (ticketId: string) => expandedTickets.has(ticketId);
+
+  // Show loading state
+  if (loading && tickets.length === 0) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.loadingOverlay}>
+          <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+            <RefreshCw size={48} style={{ animation: 'spin 1s linear infinite', marginBottom: '16px' }} />
+            <div style={{ fontSize: '20px', fontWeight: '600' }}>Loading ConnectWise Tickets...</div>
+            <div style={{ fontSize: '16px', color: '#94a3b8', marginTop: '8px' }}>
+              Connecting to live data
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div style={styles.main}>
-        <div style={{
-          ...styles.leftPanel,
-          ...(isLeftPanelVisible ? {} : styles.leftPanelHidden)
-        }}>
-          <button
-            onClick={() => setIsLeftPanelVisible(!isLeftPanelVisible)}
-            style={{
-              ...styles.toggleButton,
-              ...(isLeftPanelVisible ? {} : styles.toggleButtonHidden)
-            }}
-            title={isLeftPanelVisible ? "Hide ticket list" : "Show ticket list"}
+  return (
+    <div style={styles.container}>
+      {error && (
+        <div style={styles.errorBanner}>
+          ⚠️ Connection Error: {error} - Showing cached data
+        </div>
+      )}
+
+      <div style={styles.header}>
+        <div style={styles.logo}>
+          <Building2 style={{ marginRight: '12px', display: 'inline' }} />
+          TechFlow MSP - Engineer Portal
+        </div>
+        
+        <div style={styles.searchContainer}>
+          <Search size={24} style={styles.searchIcon} />
+          <input 
+            type="text" 
+            placeholder="Search live ConnectWise tickets..." 
+            style={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        <div style={styles.userInfo}>
+          <button 
+            onClick={refreshTickets}
+            style={styles.refreshButton}
+            disabled={loading}
           >
-            {isLeftPanelVisible ? '◀' : '▶'}
+            <RefreshCw size={16} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+            {lastUpdated && (
+              <span style={{ fontSize: '14px' }}>
+                Updated: {lastUpdated.toLocaleTimeString()}
+              </span>
+            )}
           </button>
-          
-          <div style={styles.filtersSection}>
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={styles.searchBar}
-            />
-            
-            <div style={styles.controlsRow}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'medium' }}>Sort:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  style={styles.select}
-                >
-                  <option value="client">Client</option>
-                  <option value="engineer">Engineer</option>
-                  <option value="priority">Priority</option>
-                  <option value="status">Status</option>
-                </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={20} />
+            <span>Sarah Chen • L2 Support Engineer</span>
+          </div>
+          <Settings size={24} style={{cursor: 'pointer'}} />
+        </div>
+      </div>
+
+      <div style={styles.mainContent}>
+        <div style={styles.ticketsSidebar}>
+          <div style={styles.sidebarHeader}>
+            <div>
+              <div style={styles.sidebarTitle}>
+                <MessageSquare style={{ marginRight: '12px', display: 'inline' }} />
+                ConnectWise Tickets 
+                {loading && <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', marginLeft: '8px' }} />}
               </div>
-              <select
-                value={sortFilter}
-                onChange={(e) => setSortFilter(e.target.value)}
-                style={{ ...styles.select, minWidth: '100px' }}
+              <div style={styles.sidebarStats}>
+                Showing: {filteredTickets.length} • Total: {tickets.length} • Live Data ✅
+              </div>
+            </div>
+          </div>
+          
+          <div style={styles.filterTabs}>
+            <div style={styles.filterRow}>
+              <div 
+                style={{
+                  ...styles.filterTab,
+                  ...(activeFilter === 'My Open' ? styles.filterTabActive : styles.filterTabInactive)
+                }}
+                onClick={() => setActiveFilter('My Open')}
               >
-                {getSortOptions().map(option => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                <User size={16} style={{ marginRight: '6px' }} />
+                My Open
+              </div>
+              <div 
+                style={{
+                  ...styles.filterTab,
+                  ...(activeFilter === 'All Open' ? styles.filterTabActive : styles.filterTabInactive)
+                }}
+                onClick={() => setActiveFilter('All Open')}
+              >
+                <Users size={16} style={{ marginRight: '6px' }} />
+                All Open
+              </div>
+            </div>
+
+            <div style={styles.quickFilterChips}>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.highPriority ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('highPriority')}
+              >
+                <AlertTriangle size={14} />
+                High Priority
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.myTickets ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('myTickets')}
+              >
+                <User size={14} />
+                My Tickets
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.newTickets ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('newTickets')}
+              >
+                <Circle size={14} />
+                New
+              </div>
+              <div 
+                style={{
+                  ...styles.quickFilterChip,
+                  ...(quickFilters.overdue ? styles.quickFilterChipActive : {})
+                }}
+                onClick={() => toggleQuickFilter('overdue')}
+              >
+                <Clock size={14} />
+                Overdue
+              </div>
+            </div>
+            
+            <div style={styles.filterRow}>
+              <select 
+                style={styles.filterSelect}
+                value={selectedEngineer}
+                onChange={(e) => setSelectedEngineer(e.target.value)}
+              >
+                <option value="All Engineers">All Engineers</option>
+                {engineers.sort().map(engineer => (
+                  <option key={engineer} value={engineer}>{engineer}</option>
+                ))}
+              </select>
+              
+              <input
+                type="text"
+                placeholder="Search clients..."
+                style={styles.filterInput}
+                value={selectedClient}
+                onChange={(e) => setSelectedClient(e.target.value)}
+              />
+            </div>
+            
+            <div style={styles.filterRow}>
+              <select 
+                style={styles.filterSelect}
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              >
+                {statuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+              
+              <select 
+                style={styles.filterSelect}
+                value={selectedPriority}
+                onChange={(e) => setSelectedPriority(e.target.value)}
+              >
+                {priorities.map(priority => (
+                  <option key={priority} value={priority}>{priority}</option>
                 ))}
               </select>
             </div>
-            
-            <div style={styles.tabsRow}>
-              <button
-                onClick={() => setActiveTab('my-open')}
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'my-open' ? styles.tabActive : {})
-                }}
-              >
-                My Open
-              </button>
-              <button
-                onClick={() => setActiveTab('recent')}
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === 'recent' ? styles.tabActive : {})
-                }}
-              >
-                Recent
-              </button>
-            </div>
           </div>
-
+          
           <div style={styles.ticketsList}>
-            {filteredTickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                onClick={() => setSelectedTicket(ticket)}
-                style={{
-                  ...styles.ticket,
-                  ...(selectedTicket?.id === ticket.id ? styles.ticketSelected : {}),
-                  ...getTicketBackgroundStyle(ticket)
-                }}
-              >
-                <div style={styles.ticketHeader}>
-                  <span style={styles.ticketNumber}>#{ticket.id}</span>
-                  <span style={getPriorityStyle(ticket.priority.name)}>
-                    {ticket.priority.name.toUpperCase()}
-                  </span>
+            {filteredTickets.length === 0 ? (
+              <div style={styles.emptyState}>
+                <MessageSquare size={64} style={styles.emptyStateIcon} />
+                <div style={styles.emptyStateTitle}>
+                  {loading ? 'Loading tickets...' : 'No tickets match your filters'}
                 </div>
-                <div style={styles.clientName}>{ticket.company.name}</div>
-                <div style={styles.ticketSubject}>{ticket.summary}</div>
-                <div style={styles.ticketMeta}>
-                  <span style={getStatusStyle(ticket.status.name)}>
-                    {ticket.status.name}
-                  </span>
-                  <span>{formatDate(ticket.dateEntered)}</span>
+                <div style={styles.emptyStateDescription}>
+                  {loading ? 'Connecting to ConnectWise...' : 'Try adjusting your filters or search terms to see more tickets.'}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={styles.rightPanel}>
-          <div style={styles.topSection}>
-            <div style={styles.ticketOverview}>
-              <div style={styles.ticketTitle}>
-                <span style={styles.ticketId}>
-                  {selectedTicket ? `#${selectedTicket.id}` : 'Select a Ticket'}
-                </span>
-                {selectedTicket && (
-                  <>
-                    <span style={{ ...styles.badge, ...getPriorityStyle(selectedTicket.priority.name) }}>
-                      {selectedTicket.priority.name}
-                    </span>
-                    <span style={{ ...styles.badge, ...getStatusStyle(selectedTicket.status.name) }}>
-                      {selectedTicket.status.name}
-                    </span>
-                    <span style={{ ...styles.badge, ...styles.badgeRed }}>
-                      ⚠️ Needs Attention
-                    </span>
-                  </>
-                )}
-              </div>
-              
-              {selectedTicket && (
-                <>
-                  <div style={styles.ticketDescription}>
-                    <strong>Issue:</strong> {selectedTicket.initialDescription}
+            ) : (
+              filteredTickets.map(ticket => (
+                <div 
+                  key={safeString(ticket.id)}
+                  style={{
+                    ...styles.ticketCard,
+                    ...(selectedTicket?.id === ticket.id ? styles.ticketCardSelected : {})
+                  }}
+                  onClick={() => handleTicketSelect(ticket)}
+                >
+                  <div style={styles.ticketHeader}>
+                    <div style={styles.ticketHeaderLeft}>
+                      <div style={styles.ticketNumber}>
+                        <FileText size={16} />
+                        #{safeString(ticket.id)} ({safeString(ticket.assignee)})
+                      </div>
+                      <div style={styles.ticketTitle}>{safeString(ticket.title)}</div>
+                      <div style={styles.ticketCompany}>
+                        <Building size={14} />
+                        <strong>{safeString(ticket.company)}</strong> - {formatTimeAgo(ticket.time)}
+                      </div>
+                      <div style={styles.ticketMeta}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{
+                            ...styles.priorityBadge,
+                            ...getPriorityStyle(ticket.priority)
+                          }}>
+                            {getPriorityIcon(ticket.priority)}
+                            {getPriorityText(ticket.priority)}
+                          </span>
+                          <span style={{
+                            ...styles.statusBadge,
+                            ...getStatusStyle(ticket.status)
+                          }}>
+                            {getStatusIcon(ticket.status)}
+                            {safeStatus(ticket.status)}
+                          </span>
+                        </div>
+                      </div>
+                      {(ticket.severity || ticket.type) && (
+                        <div style={styles.ticketTags}>
+                          {ticket.severity && (
+                            <span style={styles.ticketTag}>
+                              <Target size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                              {safeString(ticket.severity)}
+                            </span>
+                          )}
+                          {ticket.type && (
+                            <span style={styles.ticketTag}>
+                              <Tag size={12} style={{ marginRight: '4px', display: 'inline' }} />
+                              {safeString(ticket.type)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      <div 
+                        style={{
+                          ...styles.expandIcon,
+                          transform: isTicketExpanded(safeString(ticket.id)) ? 'rotate(180deg)' : 'rotate(0deg)'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTicketExpansion(safeString(ticket.id));
+                        }}
+                      >
+                        <ChevronDown size={20} />
+                      </div>
+                    </div>
                   </div>
-
-                  <div style={styles.lastNotesSection}>
-                    <div style={styles.lastNotesTitle}>Last Notes</div>
-                    <div style={styles.lastNotesContainer}>
-                      {lastNotes.map((note, index) => (
-                        <div 
-                          key={note.id} 
-                          style={{
-                            ...styles.noteItem,
-                            ...(index === lastNotes.length - 1 ? styles.noteItemLast : {})
+                  
+                  {isTicketExpanded(safeString(ticket.id)) && (
+                    <div style={styles.ticketDetails}>
+                      {ticket.description && (
+                        <div style={styles.ticketDescription}>
+                          <strong>Description:</strong><br />
+                          {safeString(ticket.description)}
+                        </div>
+                      )}
+                      
+                      <div style={styles.ticketMetaGrid}>
+                        {ticket.board && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Board</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.board)}</div>
+                          </div>
+                        )}
+                        {ticket.type && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Type</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.type)}</div>
+                          </div>
+                        )}
+                        {ticket.severity && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Severity</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.severity)}</div>
+                          </div>
+                        )}
+                        {ticket.impact && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Impact</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.impact)}</div>
+                          </div>
+                        )}
+                        {ticket.urgency && (
+                          <div style={styles.ticketMetaItem}>
+                            <div style={styles.ticketMetaLabel}>Urgency</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.urgency)}</div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={styles.quickActions}>
+                        <button 
+                          style={{...styles.quickAction, ...styles.quickActionPrimary}}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTicketSelect(ticket);
                           }}
                         >
-                          <div style={styles.noteHeader}>
-                            <span style={styles.noteAuthor}>{note.author}</span>
-                            <span style={styles.noteDate}>{note.date}</span>
-                          </div>
-                          <div style={styles.noteText}>{note.text}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <div style={styles.contactSummary}>
-              <div style={styles.contactLeft}>
-                <div style={styles.sectionTitle}>Contact Info</div>
-                {selectedTicket && (
-                  <div style={styles.contactInfo}>
-                    <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Requester:</span>
-                      <span style={styles.contactValue}>{selectedTicket.contact.name}</span>
-                    </div>
-                    <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Company:</span>
-                      <span style={styles.contactValue}>{selectedTicket.company.name}</span>
-                    </div>
-                    {selectedTicket.contact.phone && (
-                      <div style={styles.contactField}>
-                        <span style={styles.contactLabel}>Phone:</span>
-                        <a href={`tel:${selectedTicket.contact.phone}`} style={styles.link}>
-                          {selectedTicket.contact.phone}
-                        </a>
+                          <Eye size={16} />
+                          View Details
+                        </button>
+                        <button 
+                          style={styles.quickAction}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAction('assign');
+                          }}
+                        >
+                          <User size={16} />
+                          Take Ownership
+                        </button>
+                        <button 
+                          style={{...styles.quickAction, ...styles.quickActionDanger}}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAction('escalate');
+                          }}
+                        >
+                          <AlertTriangle size={16} />
+                          Escalate
+                        </button>
                       </div>
-                    )}
-                    {selectedTicket.contact.email && (
-                      <div style={styles.contactField}>
-                        <span style={styles.contactLabel}>Email:</span>
-                        <a href={`mailto:${selectedTicket.contact.email}`} style={styles.link}>
-                          {selectedTicket.contact.email}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <div style={styles.contactRight}>
-                <div style={styles.sectionTitle}>Customer POC</div>
-                {selectedTicket && customerPOCs[selectedTicket.id] && (
-                  <div style={styles.contactInfo}>
-                    <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Name:</span>
-                      <span style={styles.contactValue}>{customerPOCs[selectedTicket.id].name}</span>
                     </div>
-                    <div style={styles.contactField}>
-                      <span style={styles.contactLabel}>Title:</span>
-                      <span style={styles.contactValue}>{customerPOCs[selectedTicket.id].title}</span>
-                    </div>
-                    {customerPOCs[selectedTicket.id].phone && (
-                      <div style={styles.contactField}>
-                        <span style={styles.contactLabel}>Phone:</span>
-                        <a href={`tel:${customerPOCs[selectedTicket.id].phone}`} style={styles.link}>
-                          {customerPOCs[selectedTicket.id].phone}
-                        </a>
-                      </div>
-                    )}
-                    {customerPOCs[selectedTicket.id].email && (
-                      <div style={styles.contactField}>
-                        <span style={styles.contactLabel}>Email:</span>
-                        <a href={`mailto:${customerPOCs[selectedTicket.id].email}`} style={styles.link}>
-                          {customerPOCs[selectedTicket.id].email}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.actionButtonsSection}>
-            <div style={styles.aiColumn}>
-              <div style={styles.sectionTitle}>AI Engineer Assistant</div>
-              <div style={styles.buttonGrid}>
-                <button onClick={showClientEnvironment} style={styles.button}>
-                  📊 Client Environment
-                </button>
-                <button onClick={() => setShowEnterpriseModal(true)} style={styles.button}>
-                  🔍 Enterprise Search
-                </button>
-                <button onClick={showAIActions} style={styles.button}>
-                  🤖 AI Actions
-                </button>
-                <button onClick={showTicketSummary} style={styles.button}>
-                  📋 Ticket Summary
-                </button>
-              </div>
-            </div>
-
-            <div style={styles.managementColumn}>
-              <div style={styles.sectionTitle}>Ticket Management</div>
-              <div style={styles.buttonGrid}>
-                <button onClick={handleAssignTeammate} style={styles.button}>Assign/Add Teammate</button>
-                <button onClick={handleEscalation} style={styles.button}>Request Escalation</button>
-                <button onClick={handleUpdatePriorityStatus} style={styles.button}>Update Priority / Status</button>
-                <button onClick={handleAddWatchers} style={styles.button}>Add Watchers</button>
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.bottomSplitSection}>
-            <div style={styles.analysisHalf}>
-              <div style={styles.analysisHeader}>
-                <div style={styles.sectionTitle}>Analysis Results</div>
-                {analysisText && (
-                  <button 
-                    onClick={() => openAnalysisWindow(analysisText)}
-                    style={styles.cloneButton}
-                  >
-                    📋 Clone Window
-                  </button>
-                )}
-              </div>
-              {analysisText ? (
-                <div style={{ ...styles.analysisBox, flex: 1 }}>
-                  {analysisText}
+                  )}
                 </div>
-              ) : (
-                <div style={{ ...styles.analysisPlaceholder, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  Click any AI Assistant button above to view analysis results here.
-                </div>
-              )}
-            </div>
-
-            <div style={styles.notesHalf}>
-              <div style={styles.sectionTitle}>Notes & Communication</div>
-              
-              <div style={styles.timeTrackingHeader}>
-                <div style={styles.actionGroupTitle}>Time Tracking</div>
-                <div style={styles.timer}>{timerDisplay}</div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                <button onClick={generateAIDraft} style={styles.smallButton}>
-                  🤖 AI Draft
-                </button>
-                <button style={styles.smallButton}>
-                  📝 Add Note
-                </button>
-                <button style={styles.smallButton}>
-                  📎 Attach Files
-                </button>
-                <button style={{ ...styles.smallButton, ...styles.primaryButton }}>
-                  ✅ Change Status / Close
-                </button>
-                <button
-                  onClick={() => setIsTimerRunning(!isTimerRunning)}
-                  style={styles.smallButton}
-                >
-                  {isTimerRunning ? '⏸️ Stop Timer' : '▶️ Start Timer'}
-                </button>
-                <button style={styles.smallButton}>
-                  ⏱️ Manual Entry
-                </button>
-              </div>
-
-              <div style={styles.noteControls}>
-                <select
-                  value={noteType}
-                  onChange={(e) => setNoteType(e.target.value)}
-                  style={styles.select}
-                >
-                  <option>Internal Note</option>
-                  <option>Public Note</option>
-                  <option>Resolution Note</option>
-                </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px' }}>
-                  <input type="checkbox" /> Request KB Article
-                </label>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <textarea
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                  placeholder="Add notes about your investigation or actions taken..."
-                  style={{ ...styles.textarea, height: '100%', minHeight: 'auto' }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {showAssignModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Assign/Add Teammate</div>
-              <button 
-                onClick={() => setShowAssignModal(false)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <div style={styles.checkboxGroup}>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="radio"
-                    name="assignAction"
-                    checked={assignAction === 'assign'}
-                    onChange={() => setAssignAction('assign')}
-                  />
-                  Assign ticket to engineer
-                </label>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="radio"
-                    name="assignAction"
-                    checked={assignAction === 'add'}
-                    onChange={() => setAssignAction('add')}
-                  />
-                  Add engineer as collaborator
-                </label>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-                Select Engineer:
-              </label>
-              <select
-                value={selectedEngineer}
-                onChange={(e) => setSelectedEngineer(e.target.value)}
-                style={{ ...styles.searchInput, marginBottom: '0' }}
-              >
-                <option value="">Choose an engineer...</option>
-                <option value="sarah-chen">Sarah Chen - L2 Support</option>
-                <option value="mike-johnson">Mike Johnson - L3 Senior</option>
-                <option value="alex-rodriguez">Alex Rodriguez - L2 Support</option>
-                <option value="jessica-kim">Jessica Kim - L1 Support</option>
-                <option value="david-park">David Park - L3 Senior</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowAssignModal(false)}
-                style={{ ...styles.button, backgroundColor: '#6b7280' }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={saveAssignment}
-                style={{ ...styles.button, ...styles.primaryButton }}
-              >
-                {assignAction === 'assign' ? 'Assign Ticket' : 'Add Collaborator'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showWatchersModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Add Watchers</div>
-              <button 
-                onClick={() => setShowWatchersModal(false)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <div style={styles.checkboxGroup}>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="radio"
-                    name="watcherType"
-                    checked={watcherType === 'internal'}
-                    onChange={() => setWatcherType('internal')}
-                  />
-                  Internal (MSP Team)
-                </label>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="radio"
-                    name="watcherType"
-                    checked={watcherType === 'external'}
-                    onChange={() => setWatcherType('external')}
-                  />
-                  External (Customer)
-                </label>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-                {watcherType === 'internal' ? 'Select MSP Team Member:' : 'Select Customer Contact:'}
-              </label>
-              <select
-                value={selectedWatcher}
-                onChange={(e) => setSelectedWatcher(e.target.value)}
-                style={{ ...styles.searchInput, marginBottom: '0' }}
-              >
-                <option value="">Choose a contact...</option>
-                {watcherType === 'internal' ? (
-                  <>
-                    <option value="manager-lisa">Lisa Chen - Engineering Manager</option>
-                    <option value="director-james">James Wilson - Technical Director</option>
-                    <option value="support-lead">Maria Garcia - Support Team Lead</option>
-                    <option value="account-manager">Tom Bradley - Account Manager</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="client-it-manager">David Rodriguez - IT Director</option>
-                    <option value="client-ceo">Michael Chen - CEO</option>
-                    <option value="client-office-manager">Sarah Kim - Office Manager</option>
-                    <option value="client-operations">Jennifer Torres - Operations Manager</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowWatchersModal(false)}
-                style={{ ...styles.button, backgroundColor: '#6b7280' }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={saveWatchers}
-                style={{ ...styles.button, ...styles.primaryButton }}
-              >
-                Add Watcher
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEscalationModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Request Escalation</div>
-              <button 
-                onClick={() => setShowEscalationModal(false)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <div style={styles.checkboxGroup}>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={escalationSettings.changeStatus}
-                    onChange={(e) => setEscalationSettings({...escalationSettings, changeStatus: e.target.checked})}
-                  />
-                  Change ticket status to "Escalated"
-                </label>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '12px', fontSize: '14px', fontWeight: '600' }}>
-                Send Teams notification to:
-              </label>
-              <div style={styles.checkboxGroup}>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={escalationSettings.notifyManager}
-                    onChange={(e) => setEscalationSettings({...escalationSettings, notifyManager: e.target.checked})}
-                  />
-                  Your Manager (Lisa Chen)
-                </label>
-                <label style={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={escalationSettings.notifyExecutive}
-                    onChange={(e) => setEscalationSettings({...escalationSettings, notifyExecutive: e.target.checked})}
-                  />
-                  Executive Leadership (James Wilson)
-                </label>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-                Escalation Reason:
-              </label>
-              <textarea
-                placeholder="Describe why this ticket needs escalation..."
-                style={{ ...styles.textarea, height: '80px', marginBottom: '0' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowEscalationModal(false)}
-                style={{ ...styles.button, backgroundColor: '#6b7280' }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={saveEscalation}
-                style={{ ...styles.button, ...styles.primaryButton }}
-              >
-                Submit Escalation
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showUpdateModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Update Priority & Status</div>
-              <button 
-                onClick={() => setShowUpdateModal(false)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-                Priority:
-              </label>
-              <select
-                value={tempPriority}
-                onChange={(e) => setTempPriority(e.target.value)}
-                style={{ ...styles.searchInput, marginBottom: '0' }}
-              >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>
-                Status:
-              </label>
-              <select
-                value={tempStatus}
-                onChange={(e) => setTempStatus(e.target.value)}
-                style={{ ...styles.searchInput, marginBottom: '0' }}
-              >
-                <option value="New">New</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Pending">Pending</option>
-                <option value="Escalated">Escalated</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Closed">Closed</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button 
-                onClick={() => setShowUpdateModal(false)}
-                style={{ ...styles.button, backgroundColor: '#6b7280' }}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={saveUpdates}
-                style={{ ...styles.button, ...styles.primaryButton }}
-              >
-                Update Ticket
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEnterpriseModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <div style={styles.modalTitle}>Enterprise Search</div>
-              <button 
-                onClick={() => setShowEnterpriseModal(false)}
-                style={styles.closeButton}
-              >
-                ×
-              </button>
-            </div>
-            
-            <input
-              type="text"
-              placeholder="Enter search query..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
-            />
-            
-            <div style={styles.checkboxGroup}>
-              <div style={styles.sectionTitle}>Search Sources:</div>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={searchSources.historicalTickets}
-                  onChange={(e) => setSearchSources({...searchSources, historicalTickets: e.target.checked})}
-                />
-                Historical Tickets
-              </label>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={searchSources.clientDocumentation}
-                  onChange={(e) => setSearchSources({...searchSources, clientDocumentation: e.target.checked})}
-                />
-                Client Documentation
-              </label>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={searchSources.sharepoint}
-                  onChange={(e) => setSearchSources({...searchSources, sharepoint: e.target.checked})}
-                />
-                SharePoint
-              </label>
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={searchSources.externalSources}
-                  onChange={(e) => setSearchSources({...searchSources, externalSources: e.target.checked})}
-                />
-                External Sources
-              </label>
-            </div>
-            
-            <button 
-              onClick={handleEnterpriseSearch}
-              style={{ ...styles.button, ...styles.primaryButton, width: '100%', marginBottom: '16px' }}
-            >
-              Search
-            </button>
-            
-            {searchResults && (
-              <div>
-                <div style={styles.sectionTitle}>Search Results:</div>
-                <div style={styles.searchResults}>
-                  {searchResults}
-                </div>
-              </div>
+              ))
             )}
           </div>
         </div>
-      )}
 
-      {analysisWindows.map((window, index) => (
-        <div 
-          key={window.id} 
-          style={{
-            ...styles.draggableModal,
-            left: window.position.x,
-            top: window.position.y,
-            zIndex: 1100 + index
-          }}
-        >
-          <div 
-            style={styles.modalTitleBar}
-            onMouseDown={(e) => handleMouseDown(e, window.id)}
-          >
-            <div style={styles.modalTitle}>{window.title}</div>
-            <button 
-              onClick={() => closeAnalysisWindow(window.id)}
-              style={styles.closeButton}
-            >
-              ×
-            </button>
+        {selectedTicket ? (
+          <div style={styles.contentArea}>
+            <div style={styles.ticketDetailsHeader}>
+              <div style={styles.ticketDetailsTitle}>
+                {safeString(selectedTicket.title)}
+              </div>
+              <div style={styles.ticketDetailsSubtitle}>
+                <FileText size={20} />
+                #{safeString(selectedTicket.id)} ({safeString(selectedTicket.assignee)})
+                <Building size={20} />
+                {safeString(selectedTicket.company)}
+                <Clock size={20} />
+                {formatTimeAgo(selectedTicket.time)}
+              </div>
+              <div style={styles.ticketDetailsActions}>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonPrimary}}
+                  onClick={() => setShowTakeActionModal(true)}
+                >
+                  <MessageSquare size={24} />
+                  Take Action
+                </button>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonSecondary}}
+                  onClick={() => handleQuickAction('assign')}
+                >
+                  <Users size={24} />
+                  Assign/Add Teammate
+                </button>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonDanger}}
+                  onClick={() => handleQuickAction('escalate')}
+                >
+                  <AlertTriangle size={24} />
+                  Request Escalation
+                </button>
+                <button 
+                  style={{...styles.actionButton, ...styles.actionButtonSuccess}}
+                  onClick={() => {
+                    setActionModalType('Change Status');
+                    setTimerStatusChange('Resolved');
+                    setTimerNotes('');
+                    setNoteType('public');
+                    setShowActionModal(true);
+                  }}
+                >
+                  <CheckCircle size={24} />
+                  Mark Resolved
+                </button>
+              </div>
+            </div>
+
+            <div style={styles.ticketContent}>
+              <div style={styles.mainTicketArea}>
+                <div style={styles.sectionCard}>
+                  <div 
+                    style={styles.sectionHeader}
+                    onClick={() => setShowNotes(!showNotes)}
+                  >
+                    <div style={styles.sectionTitle}>
+                      <MessageSquare size={24} color="#3b82f6" />
+                      ConnectWise Ticket Notes
+                      <span style={styles.sectionBadge}>3</span>
+                    </div>
+                    {showNotes ? <Minus size={24} /> : <Plus size={24} />}
+                  </div>
+                  
+                  {showNotes && (
+                    <div style={styles.sectionContent}>
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>
+                            <User size={16} />
+                            ConnectWise System
+                            <span style={{...styles.noteType, ...styles.noteTypePublic}}>Public</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            {safeString(selectedTicket.time)}
+                          </div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          {safeString(selectedTicket.description) || 'Initial ticket description from ConnectWise system.'}
+                        </div>
+                      </div>
+                      
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>
+                            <Brain size={16} />
+                            AI Assistant
+                            <span style={{...styles.noteType, ...styles.noteTypeInternal}}>Internal</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            Live Analysis
+                          </div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          Ticket automatically imported from ConnectWise. Priority: {getPriorityText(selectedTicket.priority)}, 
+                          Status: {safeStatus(selectedTicket.status)}. Ready for AI-assisted resolution.
+                        </div>
+                      </div>
+
+                      <div style={styles.noteItem}>
+                        <div style={styles.noteHeader}>
+                          <div style={styles.noteAuthor}>
+                            <User size={16} />
+                            Sarah Chen
+                            <span style={{...styles.noteType, ...styles.noteTypePublic}}>Public</span>
+                          </div>
+                          <div style={styles.noteTime}>
+                            <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
+                            5 min ago
+                          </div>
+                        </div>
+                        <div style={styles.noteContent}>
+                          I've reviewed the ticket and am beginning investigation. Will provide an update within 30 minutes.
+                        </div>
+                      </div>
+
+                      <div 
+                        style={styles.addNoteSection}
+                        onClick={() => {
+                          setActionModalType('Add Note');
+                          setTimerNotes('');
+                          setNoteType('public');
+                          setShowActionModal(true);
+                        }}
+                      >
+                        <Plus size={24} style={{ marginBottom: '8px', color: '#3b82f6' }} />
+                        <div style={{ fontSize: '16px', fontWeight: '500' }}>Add New Note</div>
+                        <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+                          Click to add a note to this ticket
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.sectionCard}>
+                  <div style={styles.sectionHeader}>
+                    <div style={styles.sectionTitle}>
+                      <Brain size={24} color="#3b82f6" />
+                      AI Engineer Assistant - ConnectWise Integration
+                    </div>
+                  </div>
+                  
+                  <div style={styles.sectionContent}>
+                    <div style={styles.aiActions}>
+                      <button 
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'environment' ? styles.aiButtonActive : {})
+                        }}
+                        onClick={() => handleAiAction('environment')}
+                      >
+                        <Monitor size={20} />
+                        🔍 Live Client Environment
+                      </button>
+                      <button 
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'knowledge' ? styles.aiButtonActive : {})
+                        }}
+                        onClick={() => handleAiAction('knowledge')}
+                      >
+                        <Database size={20} />
+                        📈 Enterprise Knowledge Search
+                      </button>
+                      <button 
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'actions' ? styles.aiButtonActive : {})
+                        }}
+                        onClick={() => handleAiAction('actions')}
+                      >
+                        <Zap size={20} />
+                        ⚡ Generate AI Actions
+                      </button>
+                      <button 
+                        style={{
+                          ...styles.aiButton,
+                          ...(activeAiButton === 'summary' ? styles.aiButtonActive : {})
+                        }}
+                        onClick={() => handleAiAction('summary')}
+                      >
+                        <FileText size={20} />
+                        📋 ConnectWise Summary
+                      </button>
+                    </div>
+                    
+                    <div style={styles.analysisResults}>
+                      {ticketSummaryContent ? (
+                        <div style={styles.analysisContent}>
+                          {ticketSummaryContent}
+                        </div>
+                      ) : aiAnalysisResult ? (
+                        <div style={styles.analysisContent}>
+                          {aiAnalysisResult}
+                        </div>
+                      ) : searchResults ? (
+                        <div style={styles.analysisContent}>
+                          {searchResults}
+                        </div>
+                      ) : (
+                        <div style={styles.analysisPlaceholder}>
+                          <Brain size={48} style={{ marginBottom: '16px', color: '#475569' }} />
+                          <div>Click any AI Assistant button above to analyze this ConnectWise ticket.</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={styles.modalBody}>
-            <div style={{
-              ...styles.analysisBox,
-              height: '100%',
-              maxHeight: 'none',
-              margin: 0
-            }}>
-              {window.content}
+        ) : (
+          <div style={styles.contentArea}>
+            <div style={styles.emptyState}>
+              <MessageSquare size={64} style={styles.emptyStateIcon} />
+              <div style={styles.emptyStateTitle}>Select a ConnectWise Ticket</div>
+              <div style={styles.emptyStateDescription}>
+                Choose a ticket from the sidebar to view details and AI analysis
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedTicket && (
+          <div style={styles.rightSidebar}>
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>
+                <Phone size={20} />
+                ConnectWise Contact Info
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <User size={16} />
+                  Requestor
+                </div>
+                <div style={styles.contactValue}>{safeContact(selectedTicket.contact).name}</div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <Building size={16} />
+                  Company
+                </div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.company)}</div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <Phone size={16} />
+                  Phone
+                </div>
+                <div 
+                  style={styles.contactValue}
+                  onClick={() => window.open(`tel:${safeContact(selectedTicket.contact).phone}`)}
+                >
+                  {safeContact(selectedTicket.contact).phone}
+                </div>
+              </div>
+              
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <Mail size={16} />
+                  Email
+                </div>
+                <div 
+                  style={styles.contactValue}
+                  onClick={() => window.open(`mailto:${safeContact(selectedTicket.contact).email}`)}
+                >
+                  {safeContact(selectedTicket.contact).email}
+                </div>
+              </div>
+
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <FileText size={16} />
+                  Ticket Board
+                </div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.board) || 'Service Board'}</div>
+              </div>
+
+              <div style={styles.contactField}>
+                <div style={styles.contactLabel}>
+                  <Tag size={16} />
+                  Type
+                </div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.type) || 'Service Request'}</div>
+              </div>
+            </div>
+
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>
+                <Timer size={20} />
+                Time Tracking
+              </div>
+              
+              <div style={styles.timeTracking}>
+                <div style={styles.timeDisplay}>{formatTime(timerSeconds)}</div>
+                <div style={styles.timeButtons}>
+                  <button 
+                    style={{
+                      ...styles.timeButton,
+                      ...(isTimerRunning ? styles.timeButtonActive : {})
+                    }}
+                    onClick={() => setIsTimerRunning(!isTimerRunning)}
+                  >
+                    {isTimerRunning ? <Pause size={18} /> : <Play size={18} />}
+                    {isTimerRunning ? 'Pause' : 'Start'}
+                  </button>
+                  <button 
+                    style={{...styles.timeButton, ...styles.timeButtonDanger}}
+                    onClick={() => handleTakeAction('Stop Timer')}
+                  >
+                    <Timer size={18} />
+                    Stop & Log
+                  </button>
+                </div>
+                
+                <div style={styles.timeStats}>
+                  <div style={styles.timeStat}>
+                    <div style={styles.timeStatLabel}>Today</div>
+                    <div style={styles.timeStatValue}>6h 42m</div>
+                  </div>
+                  <div style={styles.timeStat}>
+                    <div style={styles.timeStatLabel}>This Week</div>
+                    <div style={styles.timeStatValue}>34h 18m</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.sidebarSection}>
+              <div style={styles.sidebarSectionTitle}>
+                <Wrench size={20} />
+                Quick Actions
+              </div>
+              
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleQuickAction('assign')}
+              >
+                <Users size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Assign/Add Teammate</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Collaborate on this ticket</div>
+                </div>
+              </button>
+              
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleQuickAction('watchers')}
+              >
+                <Eye size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Add Watchers</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Get notifications on updates</div>
+                </div>
+              </button>
+
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleTakeAction('Manual Time Entry')}
+              >
+                <Clock size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Manual Time Entry</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Log time worked offline</div>
+                </div>
+              </button>
+
+              <button 
+                style={styles.managementButton}
+                onClick={() => handleTakeAction('Share Update')}
+              >
+                <Share2 size={24} />
+                <div>
+                  <div style={{ fontWeight: '600' }}>Share Update</div>
+                  <div style={{ fontSize: '14px', color: '#94a3b8' }}>Notify team of progress</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showTakeActionModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContainer}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>Take Action</div>
+              <button 
+                style={styles.modalClose}
+                onClick={() => setShowTakeActionModal(false)}
+              >
+                <X size={32} />
+              </button>
+            </div>
+            
+            <div style={styles.modalContent}>
+              <div style={styles.modalGrid}>
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('AI Draft Response')}
+                >
+                  <Edit3 size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>AI Draft Response</div>
+                    <div style={styles.modalButtonDescription}>Generate smart reply using AI</div>
+                  </div>
+                </button>
+                
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('Attach Files')}
+                >
+                  <Paperclip size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Attach Files</div>
+                    <div style={styles.modalButtonDescription}>Upload screenshots and documents</div>
+                  </div>
+                </button>
+                
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('Change Status')}
+                >
+                  <AlertTriangle size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Change Status</div>
+                    <div style={styles.modalButtonDescription}>Update ticket status and add notes</div>
+                  </div>
+                </button>
+                
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('Stop Timer')}
+                >
+                  <Clock size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Stop Timer</div>
+                    <div style={styles.modalButtonDescription}>Stop time tracking and add work notes</div>
+                  </div>
+                </button>
+                
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('Manual Time Entry')}
+                >
+                  <Timer size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Manual Time Entry</div>
+                    <div style={styles.modalButtonDescription}>Log time worked manually</div>
+                  </div>
+                </button>
+                
+                <button 
+                  style={styles.modalButton}
+                  onClick={() => handleTakeAction('Share Update')}
+                >
+                  <Send size={24} />
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '8px' }}>Share Update</div>
+                    <div style={styles.modalButtonDescription}>Send update to colleagues</div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      ))}
+      )}
+
+      {showActionModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.modalContainer}>
+            <div style={styles.modalHeader}>
+              <div style={styles.modalTitle}>{actionModalType}</div>
+              <button 
+                style={styles.modalClose}
+                onClick={() => setShowActionModal(false)}
+              >
+                <X size={32} />
+              </button>
+            </div>
+            
+            <div style={styles.modalContent}>
+              {actionModalType === 'Change Status' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>New Status</label>
+                    <select
+                      value={timerStatusChange}
+                      onChange={(e) => setTimerStatusChange(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Select Status</option>
+                      <option value="New">New</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Waiting">Waiting</option>
+                      <option value="Escalated">Escalated</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Status Change Notes</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Describe the reason for status change..."
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Stop Timer & Add Notes' && (
+                <div>
+                  <div style={styles.timerStoppedInfo}>
+                    <div style={styles.timerStoppedTime}>
+                      Timer Stopped: {formatTime(timerSeconds)}
+                    </div>
+                    <div style={styles.timerStoppedSubtext}>
+                      Time logged for ticket #{safeString(selectedTicket?.id)}
+                    </div>
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Add Work Notes</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Describe the work completed during this time period..."
+                      rows={5}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Change Ticket Status (Optional)</label>
+                    <select
+                      value={timerStatusChange}
+                      onChange={(e) => setTimerStatusChange(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">No Status Change</option>
+                      <option value="New">New</option>
+                      <option value="Assigned">Assigned</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Waiting">Waiting</option>
+                      <option value="Escalated">Escalated</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style={styles.formField}>
+                    <label style={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={addToKnowledgeBase}
+                        onChange={(e) => setAddToKnowledgeBase(e.target.checked)}
+                        style={styles.checkbox}
+                      />
+                      Add to Company Knowledge Base
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Enterprise Knowledge Search' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Search Keywords</label>
+                    <input
+                      type="text"
+                      value={searchKeywords}
+                      onChange={(e) => setSearchKeywords(e.target.value)}
+                      placeholder="Enter search terms (e.g., 'Exchange SMTP connector')"
+                      style={styles.formInput}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Search Sources</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={searchHistoricalTickets}
+                          onChange={(e) => setSearchHistoricalTickets(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Historical Tickets
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={searchITGlue}
+                          onChange={(e) => setSearchITGlue(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        IT Glue
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={searchSharePoint}
+                          onChange={(e) => setSearchSharePoint(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        SharePoint
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={searchVendorSupport}
+                          onChange={(e) => setSearchVendorSupport(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Vendor Support
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'AI Draft Response' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Edit AI Generated Response</label>
+                    <textarea
+                      value={aiDraftText}
+                      onChange={(e) => setAiDraftText(e.target.value)}
+                      rows={12}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Send Options</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={sendEmail}
+                          onChange={(e) => setSendEmail(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Send Email
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={sendTextMessage}
+                          onChange={(e) => setSendTextMessage(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Send Text Message
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Attach Files' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Upload Files</label>
+                    <div 
+                      style={styles.fileDropZone}
+                      onDrop={handleFileDrop}
+                      onDragOver={handleDragOver}
+                      onClick={() => document.getElementById('fileInput')?.click()}
+                    >
+                      <Paperclip size={48} style={{ color: '#94a3b8', marginBottom: '16px' }} />
+                      <p style={{ fontSize: '18px', marginBottom: '8px' }}>Click to select files or drag and drop</p>
+                      <p style={{ fontSize: '16px', color: '#94a3b8' }}>Supports images, documents, and screenshots</p>
+                    </div>
+                    <input
+                      id="fileInput"
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <button
+                      onClick={handlePasteScreenshot}
+                      style={{
+                        ...styles.buttonPrimary,
+                        width: '100%'
+                      }}
+                    >
+                      <Clipboard size={20} />
+                      Paste Screenshot from Clipboard
+                    </button>
+                  </div>
+                  
+                  {selectedFiles.length > 0 && (
+                    <div style={styles.formField}>
+                      <label style={styles.formLabel}>Selected Files</label>
+                      <div style={styles.fileList}>
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} style={styles.fileItem}>
+                            <div>
+                              <span style={styles.fileName}>{file.name}</span>
+                              <span style={styles.fileSize}> ({(file.size / 1024).toFixed(1)} KB)</span>
+                            </div>
+                            <button
+                              onClick={() => removeFile(index)}
+                              style={styles.removeButton}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {actionModalType === 'Manual Time Entry' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Time Worked</label>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <input
+                        type="number"
+                        value={timeHours}
+                        onChange={(e) => setTimeHours(e.target.value)}
+                        placeholder="Hours"
+                        style={{...styles.formInput, flex: 1}}
+                        min="0"
+                        max="24"
+                      />
+                      <input
+                        type="number"
+                        value={timeMinutes}
+                        onChange={(e) => setTimeMinutes(e.target.value)}
+                        placeholder="Minutes"
+                        style={{...styles.formInput, flex: 1}}
+                        min="0"
+                        max="59"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Work Description</label>
+                    <textarea
+                      value={workDescription}
+                      onChange={(e) => setWorkDescription(e.target.value)}
+                      placeholder="Describe the work completed..."
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="timeEntryNoteType"
+                          checked={timeEntryNoteType === 'public'}
+                          onChange={() => setTimeEntryNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="timeEntryNoteType"
+                          checked={timeEntryNoteType === 'internal'}
+                          onChange={() => setTimeEntryNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Assign/Add Teammate' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Action Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="assignAction"
+                          checked={isAssignTicket}
+                          onChange={() => setIsAssignTicket(true)}
+                          style={styles.radio}
+                        />
+                        Assign Ticket (Transfer ownership)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="assignAction"
+                          checked={!isAssignTicket}
+                          onChange={() => setIsAssignTicket(false)}
+                          style={styles.radio}
+                        />
+                        Add Teammate (Collaborate)
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Select Team Member</label>
+                    <select
+                      value={assigneeSelection}
+                      onChange={(e) => setAssigneeSelection(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Choose team member...</option>
+                      {employees.map(employee => (
+                        <option key={employee} value={employee}>{employee}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Add Watchers' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Internal Watcher</label>
+                    <select
+                      value={internalWatcher}
+                      onChange={(e) => setInternalWatcher(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Select internal team member...</option>
+                      {employees.map(employee => (
+                        <option key={employee} value={employee}>{employee}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>External Watcher Email</label>
+                    <input
+                      type="email"
+                      value={externalWatcherEmail}
+                      onChange={(e) => setExternalWatcherEmail(e.target.value)}
+                      placeholder="external.contact@company.com"
+                      style={styles.formInput}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Request Escalation' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Escalation Reason</label>
+                    <textarea
+                      value={escalationReason}
+                      onChange={(e) => setEscalationReason(e.target.value)}
+                      placeholder="Explain why this ticket needs escalation..."
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Escalate To</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={escalateToManager}
+                          onChange={(e) => setEscalateToManager(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Manager
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={escalateToExecutive}
+                          onChange={(e) => setEscalateToExecutive(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Executive Team
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Escalate Via</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={escalateViaEmail}
+                          onChange={(e) => setEscalateViaEmail(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Email
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={escalateViaTeams}
+                          onChange={(e) => setEscalateViaTeams(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Teams Message
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={escalateViaSMS}
+                          onChange={(e) => setEscalateViaSMS(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        SMS / Text
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Share Update' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Share With</label>
+                    <select
+                      value={shareUpdateStaff}
+                      onChange={(e) => setShareUpdateStaff(e.target.value)}
+                      style={styles.formSelect}
+                    >
+                      <option value="">Select team member...</option>
+                      {employees.map(employee => (
+                        <option key={employee} value={employee}>{employee}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Update Notes</label>
+                    <textarea
+                      value={shareUpdateNotes}
+                      onChange={(e) => setShareUpdateNotes(e.target.value)}
+                      placeholder="What update would you like to share?"
+                      rows={4}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Share Via</label>
+                    <div style={styles.checkboxGroup}>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaEmail}
+                          onChange={(e) => setShareViaEmail(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Email
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaTeams}
+                          onChange={(e) => setShareViaTeams(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        Teams Message
+                      </label>
+                      <label style={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={shareViaSMS}
+                          onChange={(e) => setShareViaSMS(e.target.checked)}
+                          style={styles.checkbox}
+                        />
+                        SMS / Text
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {actionModalType === 'Add Note' && (
+                <div>
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Content</label>
+                    <textarea
+                      value={timerNotes}
+                      onChange={(e) => setTimerNotes(e.target.value)}
+                      placeholder="Add your note here..."
+                      rows={6}
+                      style={styles.formTextarea}
+                    />
+                  </div>
+                  
+                  <div style={styles.formField}>
+                    <label style={styles.formLabel}>Note Type</label>
+                    <div style={styles.radioGroup}>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'public'}
+                          onChange={() => setNoteType('public')}
+                          style={styles.radio}
+                        />
+                        Public (Client can see)
+                      </label>
+                      <label style={styles.radioLabel}>
+                        <input
+                          type="radio"
+                          name="noteType"
+                          checked={noteType === 'internal'}
+                          onChange={() => setNoteType('internal')}
+                          style={styles.radio}
+                        />
+                        Internal Only
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div style={styles.modalActions}>
+                <button 
+                  style={styles.buttonCancel}
+                  onClick={() => setShowActionModal(false)}
+                >
+                  Cancel
+                </button>
+                
+                <button 
+                  style={{
+                    ...(actionModalType === 'Request Escalation' ? styles.buttonDanger : styles.buttonPrimary)
+                  }}
+                  onClick={() => {
+                    if (actionModalType === 'Enterprise Knowledge Search') {
+                      if (searchKeywords.toLowerCase().includes('exchange')) {
+                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
+
+📚 Found 8 relevant articles:
+
+📄 Historical Tickets (3 results):
+• Ticket #TF-2024-001245: "Exchange connector blocking external domains" 
+  → Resolution: Modified SMTP connector settings | Time: 45 min | Success rate: 100%
+• Ticket #TF-2024-000892: "Exchange message queue backup after domain change"
+  → Resolution: Cleared queue + restart transport service | Time: 20 min 
+• Ticket #TF-2024-000654: "Similar vendor email blocking issue"
+  → Resolution: Added domain to accepted list | Time: 15 min
+
+📋 IT Glue Documentation (2 results):
+• "Exchange SMTP Connector Configuration Guide"
+  → Step-by-step instructions for domain whitelisting
+• "Common Exchange Email Flow Issues"
+  → Troubleshooting guide with PowerShell commands
+
+💡 Recommended Next Steps:
+1. Follow Historical Ticket #TF-2024-001245 resolution steps
+2. Reference IT Glue SMTP Configuration Guide
+3. Use PowerShell commands from Common Issues doc`);
+                      } else {
+                        setSearchResults(`🔍 Enterprise Knowledge Search Results for "${searchKeywords}":
+
+📚 Found 3 relevant articles:
+
+💡 Try searching for more specific terms like:
+• "Exchange" for email server issues
+• "VPN" for remote access problems  
+• "QuickBooks" for accounting software issues
+• "Password" for authentication problems`);
+                      }
+                    }
+                    setShowActionModal(false);
+                  }}
+                >
+                  {actionModalType === 'Enterprise Knowledge Search' ? 'Search Knowledge Base' :
+                   actionModalType === 'AI Draft Response' ? 'Send Communication' :
+                   actionModalType === 'Attach Files' ? `Upload Files (${selectedFiles.length})` :
+                   actionModalType === 'Change Status' ? 'Update Status' :
+                   actionModalType === 'Stop Timer & Add Notes' ? 'Save Notes & Log Time' :
+                   actionModalType === 'Manual Time Entry' ? 'Log Time Entry' :
+                   actionModalType === 'Assign/Add Teammate' ? (isAssignTicket ? 'Assign Ticket' : 'Add Teammate') :
+                   actionModalType === 'Add Watchers' ? 'Add Watchers' :
+                   actionModalType === 'Request Escalation' ? 'Submit Escalation' :
+                   actionModalType === 'Share Update' ? 'Share Update' :
+                   actionModalType === 'Add Note' ? 'Add Note' :
+                   'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default MSPPortal;
+export default ImprovedEngineerApp;
