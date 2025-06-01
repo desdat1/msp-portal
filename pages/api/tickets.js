@@ -12,8 +12,8 @@ export default function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    // Check if this is a Make.com webhook (has tickets array)
-    if (req.body && req.body.tickets) {
+    // Check if this is a Make.com webhook (has tickets property OR is direct ticket data)
+    if (req.body && (req.body.tickets || req.body.source)) {
       handleMakeWebhook(req, res);
     } else {
       handleTicketCreation(req, res);
@@ -32,19 +32,50 @@ async function handleMakeWebhook(req, res) {
     console.log('=== MAKE.COM WEBHOOK RECEIVED (NO AUTH) ===');
     console.log('Body:', JSON.stringify(req.body, null, 2));
 
-    const { tickets: incomingTickets, timestamp, source } = req.body;
+    let incomingTickets;
+    const { timestamp, source } = req.body;
+
+    // Handle different Make.com data formats
+    if (req.body.tickets) {
+      // Standard format: { tickets: [...], timestamp: "...", source: "..." }
+      incomingTickets = req.body.tickets;
+    } else if (req.body.source && req.body.source === "Live ConnectWise via Make.com") {
+      // Direct ticket data format - the entire body IS the ticket data
+      console.log('Direct ticket format detected - using entire body as ticket data');
+      incomingTickets = [req.body]; // Wrap single ticket in array
+    } else {
+      // Fallback - look for ticket-like data in the body
+      console.log('Unknown format - attempting to process as ticket data');
+      incomingTickets = [req.body];
+    }
 
     if (!incomingTickets) {
       res.status(400).json({ error: 'Missing tickets data' });
       return;
     }
 
-    console.log(`Processing ${Array.isArray(incomingTickets) ? incomingTickets.length : 1} tickets from ${source}`);
+    console.log(`Processing ${Array.isArray(incomingTickets) ? incomingTickets.length : 1} tickets from ${source || 'Make.com'}`);
 
-    // Transform and add ConnectWise tickets
-    const transformedTickets = Array.isArray(incomingTickets)
-      ? incomingTickets.map(transformConnectWiseTicket)
-      : [transformConnectWiseTicket(incomingTickets)];
+    // Handle both single tickets and arrays from Make.com
+    let ticketsToProcess;
+    if (Array.isArray(incomingTickets)) {
+      ticketsToProcess = incomingTickets;
+    } else if (incomingTickets && typeof incomingTickets === 'object') {
+      // Single ticket object - wrap in array
+      ticketsToProcess = [incomingTickets];
+    } else {
+      // Handle case where tickets might be the raw Data object
+      ticketsToProcess = [req.body];
+    }
+
+    const transformedTickets = ticketsToProcess
+      .filter(ticket => ticket && typeof ticket === 'object') // Filter out invalid tickets
+      .map(transformConnectWiseTicket);
+
+    if (transformedTickets.length === 0) {
+      res.status(400).json({ error: 'No valid ticket data found' });
+      return;
+    }
 
     // 🛠️ FIX: Add to tickets array instead of replacing
     tickets.push(...transformedTickets);
@@ -73,9 +104,11 @@ async function handleMakeWebhook(req, res) {
 
   } catch (error) {
     console.error('Make.com webhook error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       error: 'Failed to process webhook',
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
@@ -112,28 +145,57 @@ function extractValue(value) {
 
 // Transform ConnectWise ticket to application format - UPDATED with extractValue
 function transformConnectWiseTicket(cwTicket) {
-  console.log('Transforming ticket:', cwTicket?.id, cwTicket?.summary);
-  
-  return {
-    id: `CW-${extractValue(cwTicket.id) || Date.now()}`,
-    priority: mapConnectWisePriority(cwTicket.priority),
-    title: extractValue(cwTicket.summary) || extractValue(cwTicket.subject) || 'ConnectWise Ticket',
-    company: extractValue(cwTicket.company) || extractValue(cwTicket.companyName) || 'Unknown Company',
-    time: formatConnectWiseTime(cwTicket.dateEntered || cwTicket._info?.dateEntered),
-    status: mapConnectWiseStatus(cwTicket.status),
-    assignee: getConnectWiseAssignee(cwTicket),
-    contact: {
-      name: extractValue(cwTicket.contact) || extractValue(cwTicket.contactName) || 'ConnectWise User',
-      phone: extractValue(cwTicket.contactPhone) || '(555) 000-0000',
-      email: extractValue(cwTicket.contactEmail) || 'support@company.com'
-    },
-    description: extractValue(cwTicket.initialDescription) || extractValue(cwTicket.description) || '',
-    board: extractValue(cwTicket.board) || 'Default',
-    type: extractValue(cwTicket.type) || 'Service Request',
-    severity: extractValue(cwTicket.severity) || 'Medium',
-    impact: extractValue(cwTicket.impact) || 'Medium',
-    urgency: extractValue(cwTicket.urgency) || 'Medium'
-  };
+  try {
+    console.log('Transforming ticket:', cwTicket?.id, cwTicket?.summary);
+    
+    // Handle case where the ticket might have nested properties
+    const ticketData = cwTicket.tickets ? cwTicket.tickets : cwTicket;
+    
+    return {
+      id: `CW-${extractValue(ticketData.id) || Date.now()}`,
+      priority: mapConnectWisePriority(ticketData.priority),
+      title: extractValue(ticketData.summary) || extractValue(ticketData.subject) || 'ConnectWise Ticket',
+      company: extractValue(ticketData.company) || extractValue(ticketData.companyName) || 'Unknown Company',
+      time: formatConnectWiseTime(ticketData.dateEntered || ticketData._info?.dateEntered),
+      status: mapConnectWiseStatus(ticketData.status),
+      assignee: getConnectWiseAssignee(ticketData),
+      contact: {
+        name: extractValue(ticketData.contact) || extractValue(ticketData.contactName) || 'ConnectWise User',
+        phone: extractValue(ticketData.contactPhone) || '(555) 000-0000',
+        email: extractValue(ticketData.contactEmail) || 'support@company.com'
+      },
+      description: extractValue(ticketData.initialDescription) || extractValue(ticketData.description) || '',
+      board: extractValue(ticketData.board) || 'Default',
+      type: extractValue(ticketData.type) || 'Service Request',
+      severity: extractValue(ticketData.severity) || 'Medium',
+      impact: extractValue(ticketData.impact) || 'Medium',
+      urgency: extractValue(ticketData.urgency) || 'Medium'
+    };
+  } catch (error) {
+    console.error('Error transforming ticket:', error);
+    console.error('Ticket data:', cwTicket);
+    // Return a basic ticket if transformation fails
+    return {
+      id: `CW-ERROR-${Date.now()}`,
+      priority: 'MEDIUM',
+      title: 'Error Processing ConnectWise Ticket',
+      company: 'Unknown Company',
+      time: 'Unknown',
+      status: 'New',
+      assignee: 'Unassigned',
+      contact: {
+        name: 'ConnectWise User',
+        phone: '(555) 000-0000',
+        email: 'support@company.com'
+      },
+      description: 'Error processing ticket data',
+      board: 'Default',
+      type: 'Service Request',
+      severity: 'Medium',
+      impact: 'Medium',
+      urgency: 'Medium'
+    };
+  }
 }
 
 function mapConnectWisePriority(priority) {
