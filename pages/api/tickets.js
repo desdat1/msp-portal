@@ -205,7 +205,7 @@ function transformConnectWiseTicket(cwTicket) {
     const ticketData = cwTicket.tickets ? cwTicket.tickets : cwTicket;
     
     return {
-      id: `CW-${extractValue(ticketData.id) || Date.now()}`,
+      id: `CW-${ticketData.id || ticketData.ID || Date.now()}`,
       priority: mapConnectWisePriority(ticketData.priority),
       title: extractValue(ticketData.summary) || extractValue(ticketData.subject) || 'ConnectWise Ticket',
       company: extractValue(ticketData.company) || extractValue(ticketData.companyName) || 'Unknown Company',
