@@ -1,9 +1,9 @@
-// api/tickets.js
+// api/tickets.js - Fixed version for ConnectWise integration
 let ticketsData = {
   tickets: [
     {
       id: "DEMO-001",
-      priority: "MEDIUM", 
+      priority: "MEDIUM",
       title: "Vercel API Working - Ready for ConnectWise Data",
       company: "Demo Company",
       time: "1h ago",
@@ -18,7 +18,7 @@ let ticketsData = {
       board: "Help Desk",
       type: "Demo",
       severity: "Low",
-      impact: "Low", 
+      impact: "Low",
       urgency: "Low"
     }
   ],
@@ -42,67 +42,70 @@ export default function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      console.log('📨 Received POST data from Make.com:', JSON.stringify(req.body, null, 2));
+      console.log('📨 Received POST data:', JSON.stringify(req.body, null, 2));
       
       let connectWiseTickets = [];
       
-      // Handle single ticket object from Iterator
-      if (req.body && req.body.id && !Array.isArray(req.body)) {
-        console.log('📋 Received single ticket from Iterator');
-        connectWiseTickets = [req.body];
-      }
-      // Handle array format
-      else if (req.body && Array.isArray(req.body)) {
+      // Handle array of tickets (what we're receiving)
+      if (req.body && Array.isArray(req.body)) {
+        console.log('📋 Processing array of tickets:', req.body.length);
         connectWiseTickets = req.body;
       } 
-      // Handle nested tickets array
+      // Handle single ticket
+      else if (req.body && typeof req.body === 'object' && req.body.id) {
+        console.log('📋 Processing single ticket');
+        connectWiseTickets = [req.body];
+      }
+      // Handle nested format
       else if (req.body && req.body.tickets && Array.isArray(req.body.tickets)) {
+        console.log('📋 Processing nested tickets array');
         connectWiseTickets = req.body.tickets;
-      } 
+      }
       else {
         console.log('❌ No valid ticket data found');
+        console.log('🔍 Received data type:', typeof req.body);
+        console.log('🔍 Received data:', req.body);
+        
         res.status(400).json({ 
           success: false, 
-          message: 'No valid ticket data found',
-          receivedData: req.body
+          error: "Missing tickets data",
+          received: req.body,
+          expectedFormat: "Array of ticket objects or single ticket object"
         });
         return;
       }
 
-      // Process the ConnectWise ticket(s)
-      const processedTickets = connectWiseTickets.map((ticket, index) => ({
-        id: ticket.id || `CW-${String(index + 100).padStart(3, '0')}`,
-        priority: (ticket.priority?.name || ticket.priority || 'MEDIUM').toString().toUpperCase(),
-        title: ticket.summary || ticket.title || ticket.subject || 'ConnectWise Ticket',
-        company: ticket.company?.companyName || ticket.company || 'Unknown Company',
-        time: ticket.dateEntered || ticket.time || 'Recently',
-        status: ticket.status?.name || ticket.status || 'New',
-        assignee: ticket.owner?.identifier || ticket.assignee || 'Unassigned',
-        contact: {
-          name: ticket.contact?.name || ticket.contactName || 'ConnectWise User',
-          phone: ticket.contact?.phone || ticket.phone || '(555) 000-0000',
-          email: ticket.contact?.email || ticket.email || 'support@company.com'
-        },
-        description: ticket.summary || ticket.description || '',
-        board: ticket.board?.name || ticket.board || 'Service Desk',
-        type: ticket.type?.name || ticket.type || 'Service Request',
-        severity: ticket.severity || 'Medium',
-        impact: ticket.impact || 'Medium',
-        urgency: ticket.urgency || 'Medium'
-      }));
+      // Process the ConnectWise tickets
+      const processedTickets = connectWiseTickets.map((ticket, index) => {
+        console.log(`🎫 Processing ticket ${index + 1}:`, ticket.id || 'No ID');
+        
+        return {
+          id: ticket.id || `CW-${String(index + 100).padStart(3, '0')}`,
+          priority: (ticket.priority?.name || ticket.priority || 'MEDIUM').toString().toUpperCase(),
+          title: ticket.summary || ticket.title || ticket.subject || 'ConnectWise Ticket',
+          company: ticket.company?.companyName || ticket.company || 'Unknown Company',
+          time: ticket.dateEntered || ticket.time || 'Recently',
+          status: ticket.status?.name || ticket.status || 'New',
+          assignee: ticket.owner?.identifier || ticket.assignee || 'Unassigned',
+          contact: {
+            name: ticket.contact?.name || ticket.contactName || 'ConnectWise User',
+            phone: ticket.contact?.phone || ticket.phone || '(555) 000-0000',
+            email: ticket.contact?.email || ticket.email || 'support@company.com'
+          },
+          description: ticket.summary || ticket.description || '',
+          board: ticket.board?.name || ticket.board || 'Service Desk',
+          type: ticket.type?.name || ticket.type || 'Service Request',
+          severity: ticket.severity || 'Medium',
+          impact: ticket.impact || 'Medium',
+          urgency: ticket.urgency || 'Medium'
+        };
+      });
 
-      // Add to existing tickets instead of replacing them
-      const existingTickets = ticketsData.tickets.filter(t => t.id !== 'DEMO-001');
-      const newTicketIds = processedTickets.map(t => t.id);
-      const filteredExisting = existingTickets.filter(t => !newTicketIds.includes(t.id));
-      
-      const allTickets = [...filteredExisting, ...processedTickets];
-
-      // Update stored data
+      // Replace demo data with live ConnectWise tickets
       ticketsData = {
-        tickets: allTickets,
-        count: allTickets.length,
-        total: allTickets.length,
+        tickets: processedTickets,
+        count: processedTickets.length,
+        total: processedTickets.length,
         timestamp: new Date().toISOString(),
         dataSource: "Live ConnectWise via Make.com",
         isLiveData: true,
@@ -110,13 +113,12 @@ export default function handler(req, res) {
         lastUpdate: new Date().toISOString()
       };
 
-      console.log(`✅ Successfully processed ${processedTickets.length} ticket(s). Total: ${allTickets.length}`);
+      console.log(`✅ Successfully processed ${processedTickets.length} ConnectWise tickets`);
       
       res.status(200).json({ 
         success: true, 
-        message: `ConnectWise ticket(s) processed successfully!`,
+        message: `ConnectWise tickets processed successfully!`,
         processed: processedTickets.length,
-        total: allTickets.length,
         timestamp: new Date().toISOString()
       });
       
