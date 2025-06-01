@@ -27,6 +27,7 @@ export default function handler(req, res) {
 }
 
 // NEW: Handle Make.com webhook data
+// Fixed: Handle Make.com webhook data - ACCUMULATE instead of overwrite
 async function handleMakeWebhook(req, res) {
   try {
     console.log('=== MAKE.COM WEBHOOK RECEIVED (NO AUTH) ===');
@@ -42,22 +43,43 @@ async function handleMakeWebhook(req, res) {
     console.log(`Processing ${Array.isArray(incomingTickets) ? incomingTickets.length : 1} tickets from ${source}`);
 
     // Transform and add ConnectWise tickets
-    const transformedTickets = Array.isArray(incomingTickets) 
-      ? incomingTickets.map(transformConnectWiseTicket) 
+    const transformedTickets = Array.isArray(incomingTickets)
+      ? incomingTickets.map(transformConnectWiseTicket)
       : [transformConnectWiseTicket(incomingTickets)];
 
-    // Add to tickets array (replace existing to avoid duplicates)
-    tickets = transformedTickets;
+    // 🛠️ FIX: Add to tickets array instead of replacing
+    tickets.push(...transformedTickets);
 
-    console.log('Successfully processed ConnectWise tickets:', tickets.length);
+    // Remove duplicates based on ID
+    const uniqueTickets = tickets.filter((ticket, index, self) => 
+      index === self.findIndex(t => t.id === ticket.id)
+    );
+    tickets = uniqueTickets;
+
+    // Keep only latest 100 tickets
+    if (tickets.length > 100) {
+      tickets = tickets.slice(-100);
+    }
+
+    console.log('Successfully processed ConnectWise tickets. Total:', tickets.length);
 
     res.status(200).json({
       success: true,
       message: 'ConnectWise tickets synchronized successfully!',
       processed: transformedTickets.length,
+      total: tickets.length,
       timestamp: new Date().toISOString(),
       data: transformedTickets
     });
+
+  } catch (error) {
+    console.error('Make.com webhook error:', error);
+    res.status(500).json({
+      error: 'Failed to process webhook',
+      message: error.message
+    });
+  }
+}
 
   } catch (error) {
     console.error('Make.com webhook error:', error);
