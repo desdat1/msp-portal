@@ -1,4 +1,4 @@
-// pages/api/tickets/sync.js - Make.com Integration Endpoint (NO AUTH FOR TESTING)
+// pages/api/tickets/sync.js - FIXED VERSION - Stores data in global variable
 
 export default function handler(req, res) {
   // CORS headers
