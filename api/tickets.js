@@ -75,30 +75,59 @@ export default function handler(req, res) {
         return;
       }
 
-      // Process the ConnectWise tickets
+      // Helper function to safely extract string values
+      const safeString = (value, fallback = '') => {
+        if (value === null || value === undefined) return fallback;
+        if (typeof value === 'string') return value;
+        if (typeof value === 'object' && value.name) return String(value.name);
+        if (typeof value === 'object' && value.identifier) return String(value.identifier);
+        return String(value);
+      };
+
+      // Process the ConnectWise tickets with safe data extraction
       const processedTickets = connectWiseTickets.map((ticket, index) => {
         console.log(`🎫 Processing ticket ${index + 1}:`, ticket.id || 'No ID');
         
-        return {
-          id: ticket.id || `CW-${String(index + 100).padStart(3, '0')}`,
-          priority: (ticket.priority?.name || ticket.priority || 'MEDIUM').toString().toUpperCase(),
-          title: ticket.summary || ticket.title || ticket.subject || 'ConnectWise Ticket',
-          company: ticket.company?.companyName || ticket.company || 'Unknown Company',
-          time: ticket.dateEntered || ticket.time || 'Recently',
-          status: ticket.status?.name || ticket.status || 'New',
-          assignee: ticket.owner?.identifier || ticket.assignee || 'Unassigned',
-          contact: {
-            name: ticket.contact?.name || ticket.contactName || 'ConnectWise User',
-            phone: ticket.contact?.phone || ticket.phone || '(555) 000-0000',
-            email: ticket.contact?.email || ticket.email || 'support@company.com'
-          },
-          description: ticket.summary || ticket.description || '',
-          board: ticket.board?.name || ticket.board || 'Service Desk',
-          type: ticket.type?.name || ticket.type || 'Service Request',
-          severity: ticket.severity || 'Medium',
-          impact: ticket.impact || 'Medium',
-          urgency: ticket.urgency || 'Medium'
-        };
+        try {
+          return {
+            id: safeString(ticket.id, `CW-${String(index + 100).padStart(3, '0')}`),
+            priority: safeString(ticket.priority, 'MEDIUM').toUpperCase(),
+            title: safeString(ticket.summary || ticket.title || ticket.subject, 'ConnectWise Ticket'),
+            company: safeString(ticket.company?.companyName || ticket.company, 'Unknown Company'),
+            time: safeString(ticket.dateEntered || ticket.time, 'Recently'),
+            status: safeString(ticket.status, 'New'),
+            assignee: safeString(ticket.owner || ticket.assignee, 'Unassigned'),
+            contact: {
+              name: safeString(ticket.contact?.name || ticket.contactName, 'ConnectWise User'),
+              phone: safeString(ticket.contact?.phone || ticket.phone, '(555) 000-0000'),
+              email: safeString(ticket.contact?.email || ticket.email, 'support@company.com')
+            },
+            description: safeString(ticket.summary || ticket.description, ''),
+            board: safeString(ticket.board, 'Service Desk'),
+            type: safeString(ticket.type, 'Service Request'),
+            severity: safeString(ticket.severity, 'Medium'),
+            impact: safeString(ticket.impact, 'Medium'),
+            urgency: safeString(ticket.urgency, 'Medium')
+          };
+        } catch (error) {
+          console.error(`Error processing ticket ${index + 1}:`, error);
+          return {
+            id: `ERROR-${index}`,
+            priority: 'MEDIUM',
+            title: 'Error processing ticket',
+            company: 'Unknown',
+            time: 'Recently',
+            status: 'New',
+            assignee: 'Unassigned',
+            contact: { name: 'Unknown', phone: '(555) 000-0000', email: 'unknown@company.com' },
+            description: 'Error occurred while processing this ticket',
+            board: 'Service Desk',
+            type: 'Service Request',
+            severity: 'Medium',
+            impact: 'Medium',
+            urgency: 'Medium'
+          };
+        }
       });
 
       // Replace demo data with live ConnectWise tickets
