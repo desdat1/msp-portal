@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Search, 
   Settings, 
@@ -40,6 +40,48 @@ import {
 } from 'lucide-react';
 import useTickets from '../hooks/useTickets';
 import { Ticket } from '../types/Ticket';
+
+// 🛠️ DEFENSIVE RENDERING FUNCTIONS FOR CONNECTWISE OBJECTS
+const safeString = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'object' && value.name) return value.name;
+  if (typeof value === 'object' && value.text) return value.text;
+  if (typeof value === 'object' && value.value) return value.value;
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const safeContact = (contact: any) => {
+  if (!contact) return { name: 'Unknown', phone: '', email: '' };
+  if (typeof contact === 'string') return { name: contact, phone: '', email: '' };
+  return {
+    name: safeString(contact.name || contact.displayName || contact),
+    phone: safeString(contact.phone || contact.phoneNumber || ''),
+    email: safeString(contact.email || contact.emailAddress || '')
+  };
+};
+
+const safePriority = (priority: any): string => {
+  const priorityStr = safeString(priority);
+  const upperPriority = priorityStr.toUpperCase();
+  if (['HIGH', 'MEDIUM', 'LOW', 'NEEDS_ATTENTION'].includes(upperPriority)) {
+    return upperPriority;
+  }
+  if (priorityStr.toLowerCase().includes('high') || priorityStr.includes('1')) return 'HIGH';
+  if (priorityStr.toLowerCase().includes('medium') || priorityStr.includes('2')) return 'MEDIUM';
+  if (priorityStr.toLowerCase().includes('low') || priorityStr.includes('3')) return 'LOW';
+  if (priorityStr.toLowerCase().includes('attention')) return 'NEEDS_ATTENTION';
+  return 'MEDIUM'; // Default fallback
+};
+
+const safeStatus = (status: any): string => {
+  const statusStr = safeString(status);
+  const validStatuses = ['New', 'Assigned', 'In Progress', 'Waiting', 'Escalated', 'Resolved'];
+  const foundStatus = validStatuses.find(s => statusStr.toLowerCase().includes(s.toLowerCase()));
+  return foundStatus || 'New'; // Default fallback
+};
 
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
@@ -1265,43 +1307,50 @@ const ImprovedEngineerApp = () => {
     // Search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      if (!ticket.assignee.toLowerCase().includes(query) &&
-          !ticket.title.toLowerCase().includes(query) &&
-          !ticket.company.toLowerCase().includes(query) &&
-          !ticket.id.toLowerCase().includes(query)) {
+      const assignee = safeString(ticket.assignee).toLowerCase();
+      const title = safeString(ticket.title).toLowerCase();
+      const company = safeString(ticket.company).toLowerCase();
+      const id = safeString(ticket.id).toLowerCase();
+      
+      if (!assignee.includes(query) &&
+          !title.includes(query) &&
+          !company.includes(query) &&
+          !id.includes(query)) {
         return false;
       }
     }
     
     // Quick filters
-    if (quickFilters.highPriority && ticket.priority !== 'HIGH' && ticket.priority !== 'NEEDS_ATTENTION') {
+    const priority = safePriority(ticket.priority);
+    if (quickFilters.highPriority && priority !== 'HIGH' && priority !== 'NEEDS_ATTENTION') {
       return false;
     }
-    if (quickFilters.myTickets && ticket.assignee !== 'Sarah Chen') {
+    if (quickFilters.myTickets && safeString(ticket.assignee) !== 'Sarah Chen') {
       return false;
     }
-    if (quickFilters.newTickets && ticket.status !== 'New') {
+    if (quickFilters.newTickets && safeStatus(ticket.status) !== 'New') {
       return false;
     }
     if (quickFilters.overdue) {
       // Simple overdue logic - tickets older than 2 days
-      const ticketHours = parseInt(ticket.time);
+      const timeStr = safeString(ticket.time);
+      const ticketHours = parseInt(timeStr);
       if (isNaN(ticketHours) || ticketHours < 48) {
         return false;
       }
     }
     
     // Standard filters
-    if (selectedEngineer !== 'All Engineers' && ticket.assignee !== selectedEngineer) {
+    if (selectedEngineer !== 'All Engineers' && safeString(ticket.assignee) !== selectedEngineer) {
       return false;
     }
-    if (selectedClient && !ticket.company.toLowerCase().includes(selectedClient.toLowerCase())) {
+    if (selectedClient && !safeString(ticket.company).toLowerCase().includes(selectedClient.toLowerCase())) {
       return false;
     }
-    if (selectedStatus !== 'All Statuses' && ticket.status !== selectedStatus) {
+    if (selectedStatus !== 'All Statuses' && safeStatus(ticket.status) !== selectedStatus) {
       return false;
     }
-    if (selectedPriority !== 'All Priorities' && ticket.priority !== selectedPriority) {
+    if (selectedPriority !== 'All Priorities' && safePriority(ticket.priority) !== selectedPriority) {
       return false;
     }
     
@@ -1326,7 +1375,8 @@ const ImprovedEngineerApp = () => {
   };
 
   const getPriorityStyle = (priority: string) => {
-    switch(priority) {
+    const safePrio = safePriority(priority);
+    switch(safePrio) {
       case 'HIGH': return styles.priorityHigh;
       case 'MEDIUM': return styles.priorityMedium;
       case 'LOW': return styles.priorityLow;
@@ -1336,7 +1386,8 @@ const ImprovedEngineerApp = () => {
   };
 
   const getPriorityIcon = (priority: string) => {
-    switch(priority) {
+    const safePrio = safePriority(priority);
+    switch(safePrio) {
       case 'HIGH': return <AlertTriangle size={16} />;
       case 'NEEDS_ATTENTION': return <Flag size={16} />;
       case 'MEDIUM': return <Circle size={16} />;
@@ -1345,13 +1396,15 @@ const ImprovedEngineerApp = () => {
     }
   };
 
-  const getPriorityText = (priority: Ticket['priority']) => {
-    if (priority === 'NEEDS_ATTENTION') return 'Needs Attention';
-    return priority;
+  const getPriorityText = (priority: any) => {
+    const safePrio = safePriority(priority);
+    if (safePrio === 'NEEDS_ATTENTION') return 'Needs Attention';
+    return safePrio;
   };
 
-  const getStatusStyle = (status: Ticket['status']) => {
-    switch(status) {
+  const getStatusStyle = (status: any) => {
+    const safeStatusValue = safeStatus(status);
+    switch(safeStatusValue) {
       case 'New': return styles.statusNew;
       case 'Assigned': return styles.statusAssigned;
       case 'In Progress': return styles.statusInProgress;
@@ -1362,8 +1415,9 @@ const ImprovedEngineerApp = () => {
     }
   };
 
-  const getStatusIcon = (status: Ticket['status']) => {
-    switch(status) {
+  const getStatusIcon = (status: any) => {
+    const safeStatusValue = safeStatus(status);
+    switch(safeStatusValue) {
       case 'New': return <Circle size={12} />;
       case 'Assigned': return <User size={12} />;
       case 'In Progress': return <Play size={12} />;
@@ -1374,26 +1428,27 @@ const ImprovedEngineerApp = () => {
     }
   };
 
-  const formatTimeAgo = (timeString: string) => {
-    if (!timeString) return 'Unknown';
+  const formatTimeAgo = (timeString: any) => {
+    const timeStr = safeString(timeString);
+    if (!timeStr) return 'Unknown';
     
-    if (timeString.includes('h')) {
-      const hours = parseInt(timeString);
+    if (timeStr.includes('h')) {
+      const hours = parseInt(timeStr);
       if (hours >= 24) {
         const days = Math.floor(hours / 24);
         return `${days} day${days > 1 ? 's' : ''} ago`;
       }
       return `${hours} hour${hours > 1 ? 's' : ''} ago`;
     }
-    if (timeString.includes('min') || timeString.includes('m')) {
-      const minutes = parseInt(timeString);
+    if (timeStr.includes('min') || timeStr.includes('m')) {
+      const minutes = parseInt(timeStr);
       if (minutes >= 60) {
         const hours = Math.floor(minutes / 60);
         return `${hours} hour${hours > 1 ? 's' : ''} ago`;
       }
-      return timeString;
+      return timeStr;
     }
-    return timeString;
+    return timeStr;
   };
 
   const handleTicketSelect = (ticket: Ticket) => {
@@ -1413,27 +1468,28 @@ const ImprovedEngineerApp = () => {
     
     switch(action) {
       case 'environment':
-        setAiAnalysisResult(`🏢 Client Environment - ${selectedTicket.company}:
+        const contact = safeContact(selectedTicket.contact);
+        setAiAnalysisResult(`🏢 Client Environment - ${safeString(selectedTicket.company)}:
         
 📊 Environment Overview:
-• Company: ${selectedTicket.company}
-• Contact: ${selectedTicket.contact.name}
-• Phone: ${selectedTicket.contact.phone}
-• Email: ${selectedTicket.contact.email}
-• Current Assignee: ${selectedTicket.assignee}
+• Company: ${safeString(selectedTicket.company)}
+• Contact: ${contact.name}
+• Phone: ${contact.phone}
+• Email: ${contact.email}
+• Current Assignee: ${safeString(selectedTicket.assignee)}
 
 🔍 Current Ticket Details:
-• Ticket ID: ${selectedTicket.id}
+• Ticket ID: ${safeString(selectedTicket.id)}
 • Priority: ${getPriorityText(selectedTicket.priority)}
-• Status: ${selectedTicket.status}
-• Created: ${selectedTicket.time}
-• Board: ${selectedTicket.board || 'Service Board'}
-• Type: ${selectedTicket.type || 'Service Request'}
+• Status: ${safeStatus(selectedTicket.status)}
+• Created: ${safeString(selectedTicket.time)}
+• Board: ${safeString(selectedTicket.board) || 'Service Board'}
+• Type: ${safeString(selectedTicket.type) || 'Service Request'}
 
 💻 Technical Information:
-• Severity: ${selectedTicket.severity || 'Medium'}
-• Impact: ${selectedTicket.impact || 'Medium'}  
-• Urgency: ${selectedTicket.urgency || 'Medium'}
+• Severity: ${safeString(selectedTicket.severity) || 'Medium'}
+• Impact: ${safeString(selectedTicket.impact) || 'Medium'}  
+• Urgency: ${safeString(selectedTicket.urgency) || 'Medium'}
 
 📋 ConnectWise Integration:
 ✅ Live data from ConnectWise API
@@ -1447,18 +1503,19 @@ const ImprovedEngineerApp = () => {
         break;
         
       case 'actions':
-        const actionPlan = `⚡ AI Generated Action Plan for Ticket #${selectedTicket.id}:
+        const title = safeString(selectedTicket.title);
+        const actionPlan = `⚡ AI Generated Action Plan for Ticket #${safeString(selectedTicket.id)}:
 
-🎯 Issue: ${selectedTicket.title}
-🏢 Client: ${selectedTicket.company}
+🎯 Issue: ${title}
+🏢 Client: ${safeString(selectedTicket.company)}
 ⚡ Priority: ${getPriorityText(selectedTicket.priority)}
 
 🔍 Analysis:
-${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.toLowerCase().includes('drive') ?
+${title.toLowerCase().includes('smart') || title.toLowerCase().includes('drive') ?
   '• Hardware failure detected - SMART errors indicate imminent drive failure\n• Immediate backup and replacement required\n• Estimated downtime: 1-2 hours' :
-  selectedTicket.title.toLowerCase().includes('network') || selectedTicket.title.toLowerCase().includes('outage') ?
+  title.toLowerCase().includes('network') || title.toLowerCase().includes('outage') ?
   '• Network connectivity issue affecting multiple users\n• Check network infrastructure and ISP connectivity\n• Estimated resolution: 2-4 hours' :
-  selectedTicket.title.toLowerCase().includes('email') || selectedTicket.title.toLowerCase().includes('exchange') ?
+  title.toLowerCase().includes('email') || title.toLowerCase().includes('exchange') ?
   '• Email system configuration issue\n• Check Exchange connectors and mail flow\n• Estimated resolution: 30-60 minutes' :
   '• Standard service request\n• Follow established procedures\n• Estimated resolution: 1-2 hours'}
 
@@ -1472,7 +1529,7 @@ ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.t
 
 ⏱️ Next Steps:
 • Update ticket status to "In Progress"
-• Contact ${selectedTicket.contact.name} at ${selectedTicket.contact.phone}
+• Contact ${safeContact(selectedTicket.contact).name} at ${safeContact(selectedTicket.contact).phone}
 • Schedule maintenance window if required
 • Follow up within 24 hours`;
         
@@ -1480,39 +1537,40 @@ ${selectedTicket.title.toLowerCase().includes('smart') || selectedTicket.title.t
         break;
         
       case 'summary':
-        setTicketSummaryContent(`📋 ConnectWise Ticket Summary - #${selectedTicket.id}
+        const summaryContact = safeContact(selectedTicket.contact);
+        setTicketSummaryContent(`📋 ConnectWise Ticket Summary - #${safeString(selectedTicket.id)}
 
 🎯 Issue Overview:
-${selectedTicket.title}
+${safeString(selectedTicket.title)}
 
 🏢 Client Information:
-• Company: ${selectedTicket.company}
-• Contact: ${selectedTicket.contact.name}
-• Phone: ${selectedTicket.contact.phone}
-• Email: ${selectedTicket.contact.email}
+• Company: ${safeString(selectedTicket.company)}
+• Contact: ${summaryContact.name}
+• Phone: ${summaryContact.phone}
+• Email: ${summaryContact.email}
 
 📊 Ticket Details:
 • Priority: ${getPriorityText(selectedTicket.priority)}
-• Status: ${selectedTicket.status}
-• Assignee: ${selectedTicket.assignee}
-• Created: ${selectedTicket.time}
-• Board: ${selectedTicket.board || 'Service Board'}
-• Type: ${selectedTicket.type || 'Service Request'}
+• Status: ${safeStatus(selectedTicket.status)}
+• Assignee: ${safeString(selectedTicket.assignee)}
+• Created: ${safeString(selectedTicket.time)}
+• Board: ${safeString(selectedTicket.board) || 'Service Board'}
+• Type: ${safeString(selectedTicket.type) || 'Service Request'}
 
 🔧 Technical Classification:
-• Severity: ${selectedTicket.severity || 'Medium'}
-• Impact: ${selectedTicket.impact || 'Medium'}
-• Urgency: ${selectedTicket.urgency || 'Medium'}
+• Severity: ${safeString(selectedTicket.severity) || 'Medium'}
+• Impact: ${safeString(selectedTicket.impact) || 'Medium'}
+• Urgency: ${safeString(selectedTicket.urgency) || 'Medium'}
 
 💼 Business Impact:
-${selectedTicket.priority === 'HIGH' || selectedTicket.priority === 'NEEDS_ATTENTION' ?
+${safePriority(selectedTicket.priority) === 'HIGH' || safePriority(selectedTicket.priority) === 'NEEDS_ATTENTION' ?
   '• High priority - critical business operations may be affected\n• Immediate attention required' :
-  selectedTicket.priority === 'MEDIUM' ?
+  safePriority(selectedTicket.priority) === 'MEDIUM' ?
   '• Medium priority - normal business impact\n• Standard response time applies' :
   '• Low priority - minimal business impact\n• Can be scheduled during normal business hours'}
 
 📝 Description:
-${selectedTicket.description || 'No detailed description available'}
+${safeString(selectedTicket.description) || 'No detailed description available'}
 
 🔗 ConnectWise Integration:
 ✅ Live sync with ConnectWise system
@@ -1528,19 +1586,20 @@ ${selectedTicket.description || 'No detailed description available'}
     switch(action) {
       case 'AI Draft Response':
         setActionModalType('AI Draft Response');
-        setAiDraftText(`Dear ${selectedTicket?.contact?.name || 'Client'},
+        const contact = safeContact(selectedTicket?.contact);
+        setAiDraftText(`Dear ${contact.name || 'Client'},
 
 Thank you for reporting the issue. I've identified the root cause and am implementing a solution.
 
 Issue Summary:
-${selectedTicket?.title || 'Service Request'}
+${safeString(selectedTicket?.title) || 'Service Request'}
 
 Resolution Plan:
 1. Initial assessment and diagnosis (In Progress)
 2. Implement recommended solution (Next - 15-30 min)
 3. Test and verify functionality (Final - 10-15 min)
 
-Expected Resolution: Within ${selectedTicket?.title?.toLowerCase().includes('smart') ? '2-3 hours' : selectedTicket?.title?.toLowerCase().includes('ransomware') ? '6-8 hours' : selectedTicket?.title?.toLowerCase().includes('network') ? '2-6 hours' : '45 minutes'}
+Expected Resolution: Within ${safeString(selectedTicket?.title)?.toLowerCase().includes('smart') ? '2-3 hours' : safeString(selectedTicket?.title)?.toLowerCase().includes('ransomware') ? '6-8 hours' : safeString(selectedTicket?.title)?.toLowerCase().includes('network') ? '2-6 hours' : '45 minutes'}
 I'll send an update once testing is complete.
 
 Best regards,
@@ -1555,7 +1614,7 @@ TechFlow MSP`);
         break;
       case 'Change Status':
         setActionModalType('Change Status');
-        setTimerStatusChange(selectedTicket?.status || '');
+        setTimerStatusChange(safeStatus(selectedTicket?.status) || '');
         setTimerNotes('');
         setNoteType('public');
         setShowActionModal(true);
@@ -1860,7 +1919,7 @@ TechFlow MSP`);
             ) : (
               filteredTickets.map(ticket => (
                 <div 
-                  key={ticket.id}
+                  key={safeString(ticket.id)}
                   style={{
                     ...styles.ticketCard,
                     ...(selectedTicket?.id === ticket.id ? styles.ticketCardSelected : {})
@@ -1871,12 +1930,12 @@ TechFlow MSP`);
                     <div style={styles.ticketHeaderLeft}>
                       <div style={styles.ticketNumber}>
                         <FileText size={16} />
-                        #{ticket.id} ({ticket.assignee})
+                        #{safeString(ticket.id)} ({safeString(ticket.assignee)})
                       </div>
-                      <div style={styles.ticketTitle}>{ticket.title}</div>
+                      <div style={styles.ticketTitle}>{safeString(ticket.title)}</div>
                       <div style={styles.ticketCompany}>
                         <Building size={14} />
-                        <strong>{ticket.company}</strong> - {formatTimeAgo(ticket.time)}
+                        <strong>{safeString(ticket.company)}</strong> - {formatTimeAgo(ticket.time)}
                       </div>
                       <div style={styles.ticketMeta}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -1892,7 +1951,7 @@ TechFlow MSP`);
                             ...getStatusStyle(ticket.status)
                           }}>
                             {getStatusIcon(ticket.status)}
-                            {ticket.status}
+                            {safeStatus(ticket.status)}
                           </span>
                         </div>
                       </div>
@@ -1901,13 +1960,13 @@ TechFlow MSP`);
                           {ticket.severity && (
                             <span style={styles.ticketTag}>
                               <Target size={12} style={{ marginRight: '4px', display: 'inline' }} />
-                              {ticket.severity}
+                              {safeString(ticket.severity)}
                             </span>
                           )}
                           {ticket.type && (
                             <span style={styles.ticketTag}>
                               <Tag size={12} style={{ marginRight: '4px', display: 'inline' }} />
-                              {ticket.type}
+                              {safeString(ticket.type)}
                             </span>
                           )}
                         </div>
@@ -1917,11 +1976,11 @@ TechFlow MSP`);
                       <div 
                         style={{
                           ...styles.expandIcon,
-                          transform: isTicketExpanded(ticket.id) ? 'rotate(180deg)' : 'rotate(0deg)'
+                          transform: isTicketExpanded(safeString(ticket.id)) ? 'rotate(180deg)' : 'rotate(0deg)'
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleTicketExpansion(ticket.id);
+                          toggleTicketExpansion(safeString(ticket.id));
                         }}
                       >
                         <ChevronDown size={20} />
@@ -1929,12 +1988,12 @@ TechFlow MSP`);
                     </div>
                   </div>
                   
-                  {isTicketExpanded(ticket.id) && (
+                  {isTicketExpanded(safeString(ticket.id)) && (
                     <div style={styles.ticketDetails}>
                       {ticket.description && (
                         <div style={styles.ticketDescription}>
                           <strong>Description:</strong><br />
-                          {ticket.description}
+                          {safeString(ticket.description)}
                         </div>
                       )}
                       
@@ -1942,31 +2001,31 @@ TechFlow MSP`);
                         {ticket.board && (
                           <div style={styles.ticketMetaItem}>
                             <div style={styles.ticketMetaLabel}>Board</div>
-                            <div style={styles.ticketMetaValue}>{ticket.board}</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.board)}</div>
                           </div>
                         )}
                         {ticket.type && (
                           <div style={styles.ticketMetaItem}>
                             <div style={styles.ticketMetaLabel}>Type</div>
-                            <div style={styles.ticketMetaValue}>{ticket.type}</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.type)}</div>
                           </div>
                         )}
                         {ticket.severity && (
                           <div style={styles.ticketMetaItem}>
                             <div style={styles.ticketMetaLabel}>Severity</div>
-                            <div style={styles.ticketMetaValue}>{ticket.severity}</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.severity)}</div>
                           </div>
                         )}
                         {ticket.impact && (
                           <div style={styles.ticketMetaItem}>
                             <div style={styles.ticketMetaLabel}>Impact</div>
-                            <div style={styles.ticketMetaValue}>{ticket.impact}</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.impact)}</div>
                           </div>
                         )}
                         {ticket.urgency && (
                           <div style={styles.ticketMetaItem}>
                             <div style={styles.ticketMetaLabel}>Urgency</div>
-                            <div style={styles.ticketMetaValue}>{ticket.urgency}</div>
+                            <div style={styles.ticketMetaValue}>{safeString(ticket.urgency)}</div>
                           </div>
                         )}
                       </div>
@@ -2015,13 +2074,13 @@ TechFlow MSP`);
           <div style={styles.contentArea}>
             <div style={styles.ticketDetailsHeader}>
               <div style={styles.ticketDetailsTitle}>
-                {selectedTicket.title}
+                {safeString(selectedTicket.title)}
               </div>
               <div style={styles.ticketDetailsSubtitle}>
                 <FileText size={20} />
-                #{selectedTicket.id} ({selectedTicket.assignee})
+                #{safeString(selectedTicket.id)} ({safeString(selectedTicket.assignee)})
                 <Building size={20} />
-                {selectedTicket.company}
+                {safeString(selectedTicket.company)}
                 <Clock size={20} />
                 {formatTimeAgo(selectedTicket.time)}
               </div>
@@ -2089,11 +2148,11 @@ TechFlow MSP`);
                           </div>
                           <div style={styles.noteTime}>
                             <Clock size={14} style={{ marginRight: '4px', display: 'inline' }} />
-                            {selectedTicket.time}
+                            {safeString(selectedTicket.time)}
                           </div>
                         </div>
                         <div style={styles.noteContent}>
-                          {selectedTicket.description || 'Initial ticket description from ConnectWise system.'}
+                          {safeString(selectedTicket.description) || 'Initial ticket description from ConnectWise system.'}
                         </div>
                       </div>
                       
@@ -2111,7 +2170,7 @@ TechFlow MSP`);
                         </div>
                         <div style={styles.noteContent}>
                           Ticket automatically imported from ConnectWise. Priority: {getPriorityText(selectedTicket.priority)}, 
-                          Status: {selectedTicket.status}. Ready for AI-assisted resolution.
+                          Status: {safeStatus(selectedTicket.status)}. Ready for AI-assisted resolution.
                         </div>
                       </div>
 
@@ -2253,7 +2312,7 @@ TechFlow MSP`);
                   <User size={16} />
                   Requestor
                 </div>
-                <div style={styles.contactValue}>{selectedTicket.contact.name}</div>
+                <div style={styles.contactValue}>{safeContact(selectedTicket.contact).name}</div>
               </div>
               
               <div style={styles.contactField}>
@@ -2261,7 +2320,7 @@ TechFlow MSP`);
                   <Building size={16} />
                   Company
                 </div>
-                <div style={styles.contactValue}>{selectedTicket.company}</div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.company)}</div>
               </div>
               
               <div style={styles.contactField}>
@@ -2271,9 +2330,9 @@ TechFlow MSP`);
                 </div>
                 <div 
                   style={styles.contactValue}
-                  onClick={() => window.open(`tel:${selectedTicket.contact.phone}`)}
+                  onClick={() => window.open(`tel:${safeContact(selectedTicket.contact).phone}`)}
                 >
-                  {selectedTicket.contact.phone}
+                  {safeContact(selectedTicket.contact).phone}
                 </div>
               </div>
               
@@ -2284,9 +2343,9 @@ TechFlow MSP`);
                 </div>
                 <div 
                   style={styles.contactValue}
-                  onClick={() => window.open(`mailto:${selectedTicket.contact.email}`)}
+                  onClick={() => window.open(`mailto:${safeContact(selectedTicket.contact).email}`)}
                 >
-                  {selectedTicket.contact.email}
+                  {safeContact(selectedTicket.contact).email}
                 </div>
               </div>
 
@@ -2295,7 +2354,7 @@ TechFlow MSP`);
                   <FileText size={16} />
                   Ticket Board
                 </div>
-                <div style={styles.contactValue}>{selectedTicket.board || 'Service Board'}</div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.board) || 'Service Board'}</div>
               </div>
 
               <div style={styles.contactField}>
@@ -2303,7 +2362,7 @@ TechFlow MSP`);
                   <Tag size={16} />
                   Type
                 </div>
-                <div style={styles.contactValue}>{selectedTicket.type || 'Service Request'}</div>
+                <div style={styles.contactValue}>{safeString(selectedTicket.type) || 'Service Request'}</div>
               </div>
             </div>
 
@@ -2567,7 +2626,7 @@ TechFlow MSP`);
                       Timer Stopped: {formatTime(timerSeconds)}
                     </div>
                     <div style={styles.timerStoppedSubtext}>
-                      Time logged for ticket #{selectedTicket?.id}
+                      Time logged for ticket #{safeString(selectedTicket?.id)}
                     </div>
                   </div>
 
