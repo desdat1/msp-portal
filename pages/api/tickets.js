@@ -26,7 +26,6 @@ export default function handler(req, res) {
   }
 }
 
-// NEW: Handle Make.com webhook data
 // Fixed: Handle Make.com webhook data - ACCUMULATE instead of overwrite
 async function handleMakeWebhook(req, res) {
   try {
@@ -81,44 +80,67 @@ async function handleMakeWebhook(req, res) {
   }
 }
 
-  } catch (error) {
-    console.error('Make.com webhook error:', error);
-    res.status(500).json({
-      error: 'Failed to process webhook',
-      message: error.message
-    });
+// NEW: Aggressive value extraction function to handle ConnectWise objects
+function extractValue(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return value.toString();
+  
+  // Handle common object patterns
+  if (typeof value === 'object') {
+    // Try common properties
+    if (value.name) return extractValue(value.name);
+    if (value.companyName) return extractValue(value.companyName);
+    if (value.text) return extractValue(value.text);
+    if (value.value) return extractValue(value.value);
+    if (value.displayName) return extractValue(value.displayName);
+    if (value.identifier) return extractValue(value.identifier);
+    
+    // If it's an array, take first item
+    if (Array.isArray(value) && value.length > 0) {
+      return extractValue(value[0]);
+    }
+    
+    // Last resort - stringify but clean it up
+    const stringified = JSON.stringify(value);
+    if (stringified === '{}' || stringified === '[]') return '';
+    return stringified;
   }
+  
+  return String(value);
 }
 
-// Transform ConnectWise ticket to application format
+// Transform ConnectWise ticket to application format - UPDATED with extractValue
 function transformConnectWiseTicket(cwTicket) {
   console.log('Transforming ticket:', cwTicket?.id, cwTicket?.summary);
   
   return {
-    id: `CW-${cwTicket.id || Date.now()}`,
-    priority: mapConnectWisePriority(cwTicket.priority?.name || cwTicket.priority),
-    title: cwTicket.summary || cwTicket.subject || 'ConnectWise Ticket',
-    company: cwTicket.company?.name || cwTicket.companyName || 'Unknown Company',
+    id: `CW-${extractValue(cwTicket.id) || Date.now()}`,
+    priority: mapConnectWisePriority(cwTicket.priority),
+    title: extractValue(cwTicket.summary) || extractValue(cwTicket.subject) || 'ConnectWise Ticket',
+    company: extractValue(cwTicket.company) || extractValue(cwTicket.companyName) || 'Unknown Company',
     time: formatConnectWiseTime(cwTicket.dateEntered || cwTicket._info?.dateEntered),
-    status: mapConnectWiseStatus(cwTicket.status?.name || cwTicket.status),
+    status: mapConnectWiseStatus(cwTicket.status),
     assignee: getConnectWiseAssignee(cwTicket),
     contact: {
-      name: cwTicket.contact?.name || cwTicket.contactName || 'ConnectWise User',
-      phone: cwTicket.contact?.phone || cwTicket.contactPhone || '(555) 000-0000',
-      email: cwTicket.contact?.email || cwTicket.contactEmail || 'support@company.com'
+      name: extractValue(cwTicket.contact) || extractValue(cwTicket.contactName) || 'ConnectWise User',
+      phone: extractValue(cwTicket.contactPhone) || '(555) 000-0000',
+      email: extractValue(cwTicket.contactEmail) || 'support@company.com'
     },
-    description: cwTicket.initialDescription || cwTicket.description || '',
-    board: cwTicket.board?.name || 'Default',
-    type: cwTicket.type?.name || 'Service Request',
-    severity: cwTicket.severity || 'Medium',
-    impact: cwTicket.impact || 'Medium',
-    urgency: cwTicket.urgency || 'Medium'
+    description: extractValue(cwTicket.initialDescription) || extractValue(cwTicket.description) || '',
+    board: extractValue(cwTicket.board) || 'Default',
+    type: extractValue(cwTicket.type) || 'Service Request',
+    severity: extractValue(cwTicket.severity) || 'Medium',
+    impact: extractValue(cwTicket.impact) || 'Medium',
+    urgency: extractValue(cwTicket.urgency) || 'Medium'
   };
 }
 
 function mapConnectWisePriority(priority) {
-  if (!priority) return 'MEDIUM';
-  const p = priority.toString().toLowerCase();
+  const priorityStr = extractValue(priority);
+  if (!priorityStr) return 'MEDIUM';
+  
+  const p = priorityStr.toString().toLowerCase();
   if (p.includes('urgent') || p.includes('critical') || p.includes('high') || p === '1') return 'HIGH';
   if (p.includes('low') || p === '4' || p === '5') return 'LOW';
   if (p.includes('attention') || p.includes('escalat')) return 'NEEDS_ATTENTION';
@@ -126,8 +148,10 @@ function mapConnectWisePriority(priority) {
 }
 
 function mapConnectWiseStatus(status) {
-  if (!status) return 'New';
-  const s = status.toString().toLowerCase();
+  const statusStr = extractValue(status);
+  if (!statusStr) return 'New';
+  
+  const s = statusStr.toString().toLowerCase();
   if (s.includes('new') || s.includes('open')) return 'New';
   if (s.includes('assign')) return 'Assigned';
   if (s.includes('progress') || s.includes('working')) return 'In Progress';
@@ -138,12 +162,12 @@ function mapConnectWiseStatus(status) {
 }
 
 function getConnectWiseAssignee(ticket) {
-  if (ticket?.owner?.name) return ticket.owner.name;
-  if (ticket?.assignedTo?.name) return ticket.assignedTo.name;
-  if (ticket?.resources && ticket.resources.length > 0) {
-    return ticket.resources[0].name || ticket.resources[0];
-  }
-  return 'Unassigned';
+  // Try multiple assignee fields with extractValue
+  let assignee = extractValue(ticket?.owner) || 
+                extractValue(ticket?.assignedTo) || 
+                extractValue(ticket?.resources?.[0]);
+  
+  return assignee || 'Unassigned';
 }
 
 function formatConnectWiseTime(dateString) {
