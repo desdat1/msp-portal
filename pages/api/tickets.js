@@ -1,4 +1,4 @@
-﻿// pages/api/tickets.js - FIXED VERSION FOR ACCUMULATING TICKETS
+﻿// pages/api/tickets.js - VERSION 2.0 - ACCUMULATION FIX
 let tickets = [];
 let lastUpdated = new Date();
 let isLiveData = false;
@@ -34,6 +34,7 @@ export default function handler(req, res) {
 // Handle incoming tickets from Make.com
 async function handleTicketCreation(req, res) {
   try {
+    console.log('=== TICKET RECEIVED V2 ===')
     console.log('=== TICKET RECEIVED ===');
     console.log('Body:', JSON.stringify(req.body, null, 2));
 
